@@ -14,14 +14,15 @@ def Bjorken_hydro(tau_fo, T_fo):
     deta = 1.0
     volume = tau_fo*dtau*dx*dx*deta
 
-    nx  = 2.*R_fo/dx + 1
-    x   = np.linspace(-R_fo, R_fo, nx)
-    y   = np.linspace(-R_fo, R_fo, nx)
-    R   = np.sqrt(x**2. + y**2.)
-    idx = R <= R_fo
+    nx   = 2.*R_fo/dx + 1
+    x    = np.linspace(-R_fo, R_fo, nx)
+    y    = np.linspace(-R_fo, R_fo, nx)
+    x, y = np.meshgrid(x, y)
+    R    = np.sqrt(x**2. + y**2.)
+    idx  = R <= R_fo
 
-    xfo       = x[idx]
-    yfo       = y[idx]
+    xfo       = x[idx].reshape(-1)
+    yfo       = y[idx].reshape(-1)
     fo_length = xfo.shape
     taufo     = tau_fo*np.ones(fo_length)
     eta       = np.zeros(fo_length)
@@ -36,8 +37,8 @@ def Bjorken_hydro(tau_fo, T_fo):
     uy_fo   = np.zeros(fo_length)
     ueta_fo = np.zeros(fo_length)
 
-    e_fo = T_fo**4.*np.ones(fo_length)
-    Tfo  = T_fo*np.ones(fo_length)
+    e_fo  = T_fo**4.*np.ones(fo_length)
+    Tfo   = T_fo*np.ones(fo_length)
     muBfo = np.zeros(fo_length)
     muSfo = np.zeros(fo_length)
     muQfo = np.zeros(fo_length)
