@@ -68,8 +68,7 @@ def Bjorken_hydro(tau_fo, T_fo):
                        muBfo, muSfo, muQfo, eplusp_over_T_FO,
                        Wtautau, Wtaux, Wtauy, Wtaueta, Wxx, Wxy, Wxeta,
                        Wyy, Wyeta, Wetaeta, pi_b, rho_b, qtau, qx, qy, qeta])
-    print(output)
-    output.transpose().astype('float').tofile("frzout.dat")
+    output.transpose().astype('float32').tofile("frzout.dat")
 
 if __name__ == "__main__":
     Bjorken_hydro(10., 0.15)
