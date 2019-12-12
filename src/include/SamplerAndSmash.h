@@ -14,38 +14,40 @@ class AfterburnerModus : public smash::ListModus {
  public:
   // Unlike for ListModus there is no need to get any data from the config
   AfterburnerModus(smash::Configuration, const smash::ExperimentParameters &) {
-    std::cout << "Constructing AfterburnerModus" << std::endl;
+    const auto &log = smash::logger<smash::LogArea::Main>();
+    log.info("Constructing AfterburnerModus");
   }
 
   // The converter is not static, because modus holds int variables
   // for the number of warnings, which are used in try_create_particle,
-  // called by this function. Maybe I (oliiny) will change this design in SMASH
-  // later, but now I have to put this converter inside the AfterburnerModus.
+  // called by this function.
+  /*
   void sampler_hadrons_to_smash_particles(
       const std::vector<SamplerHadron> &sampler_hadrons,
       smash::Particles &smash_particles);
-
+*/
   // This function overrides the function from ListModus.
   double initial_conditions(smash::Particles *particles,
                             const smash::ExperimentParameters &) {
-    sampler_hadrons_to_smash_particles(sampler_hadrons_, *particles);
+    // sampler_hadrons_to_smash_particles(sampler_hadrons_, *particles);
     backpropagate_to_same_time(*particles);
     return start_time_;
   }
-  std::vector<SamplerHadron> input_hadrons_;
+  //std::vector<SamplerHadron> input_hadrons_;
 };
 
 class SamplerAndSmash {
-private:
+ public:
+  void InitSmash();
+ private:
 
-  std::string smash_config_filename_ = "./config.yaml",
+  std::string smash_config_filename_ = "../smash_config.yaml";
               // empty string means default for SMASH
-              smash_particlelist_filename_ = "",
-              smash_decaymodes_filename_ = "";
+  char *smash_particlelist_filename_ = nullptr,
+       *smash_decaymodes_filename_ = nullptr;
   std::string sampler_config_filename_ = "",
               sampler_hypersurface_filename_ = "";
   std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
-public:
 };
 
 #endif // SAMPLER_AND_SMASH_H
