@@ -5,8 +5,6 @@
 #include "smash/particles.h"
 #include "smash/setup_particles_decaymodes.h"
 
-#include "microcanonical_sampler/hydro_cells.h"
-#include "microcanonical_sampler/microcanonical_sampler.h"
 #include "microcanonical_sampler/sampler_particletype_list.h"
 
 #include <string>
@@ -54,15 +52,19 @@ void ensure_path_is_valid(const bf::path &path) {
 } // namespace
 
 SamplerAndSmash::SamplerAndSmash() {
-  // Set up configuration
-  bf::path input_config_path(smash_config_filename_);
+
+  /**
+   *   Set up configuration
+   */
+  std::string smash_config_filename = "../config.yaml";
+  bf::path input_config_path(smash_config_filename);
   if (!bf::exists(input_config_path)) {
-    std::cout << "SMASH config file " << smash_config_filename_
+    std::cout << "SMASH config file " << smash_config_filename
 	      << " not found.";
     std::exit(-1);
   } else {
     std::cout << "Obtaining SMASH configuration from "
-	      << smash_config_filename_ << std::endl;
+	      << smash_config_filename << std::endl;
   }
   smash::Configuration config = smash::Configuration(
       input_config_path.parent_path(), input_config_path.filename());
@@ -70,33 +72,16 @@ SamplerAndSmash::SamplerAndSmash() {
   smash::set_default_loglevel(
       config.take({"Logging", "default"}, einhard::ALL));
   smash::create_all_loggers(config["Logging"]);
-
-  // Initialize SMASH particle types, which may be also used by the sampler
-  std::string smash_particlelist_filename = config.take({"Particles"});
-  std::string smash_decaymodes_filename = config.take({"DecayModes"});
-  auto particles_and_decays =
-      smash::load_particles_and_decaymodes(smash_particlelist_filename.c_str(),
-		                           smash_decaymodes_filename.c_str());
-  smash::ParticleType::create_type_list(particles_and_decays.first);
-  smash::DecayModes::load_decaymodes(particles_and_decays.second);
-  smash::ParticleType::check_consistency();
+  const auto &log = smash::logger<smash::LogArea::Main>();
 
   // Take care of the random seed. This will make SMASH results reproducible.
   int64_t seed = config.read({"General", "Randomseed"});
   if (seed < 0) {
     config["General"]["Randomseed"] = smash::random::generate_63bit_seed();
   }
- 
-  const auto &log = smash::logger<smash::LogArea::Main>();
-
-  log.info("Seting up SMASH Experiment object");
-  bf::path output_path = default_output_path();
-  ensure_path_is_valid(output_path);
-
-  smash_experiment_ =
-      smash::make_unique<smash::Experiment<AfterburnerModus>>(config, output_path);
-  log.info("Finish initializing SMASH");
-
+  std::string smash_particlelist_filename = config.take({"Particles"});
+  std::string smash_decaymodes_filename = config.take({"DecayModes"});
+  
   /**
    *   Initialize sampler
    */
@@ -104,12 +89,14 @@ SamplerAndSmash::SamplerAndSmash() {
   sampler::ParticleListFormat plist_format = sampler::ParticleListFormat::SMASH;
   sampler::read_particle_list(smash_particlelist_filename, plist_format);
 
-  // Maximal hadron mass to be sampled
   smash::Configuration subconf = config["MicrocanonicalSampler"];
+  // Maximal hadron mass to be sampled
   const double max_mass = subconf.take({"MaxMass"}, 2.5);
   const double E_patch = subconf.take({"PatchEnergy"}, 10.0);
-  const int N_warmup = subconf.take({"NumberOfWarmupSteps"}, 1E6);
-
+  const size_t N_warmup = subconf.take({"WarmupSteps"}, 1E6);
+  N_decorrelate_ = subconf.take({"DecorrelationSteps"}, 2E2);
+  N_samples_per_hydro_ = subconf.take({"SamplesPerHydro"}, 100);
+ 
   // Quantum statistics is not implemented properly in the microcanonical sampler
   constexpr bool quantum_statistics = false;
 
@@ -131,69 +118,89 @@ SamplerAndSmash::SamplerAndSmash() {
   HyperSurfacePatch hyper(hypersurface_input_file, hypersurface_format,
                         eta_for_2Dhydro, is_sampled_type, quantum_statistics);
   log.info("Full hypersurface: ", hyper);
-  MicrocanonicalSampler sampler(is_sampled_type, 0, quantum_statistics);
+  sampler_ = smash::make_unique<MicrocanonicalSampler>(is_sampled_type, 0, quantum_statistics);
 
-  auto patches = hyper.split(E_patch);
-  size_t number_of_patches = patches.size();
+  patches_ = smash::make_unique<std::vector<HyperSurfacePatch>>(
+      hyper.split(E_patch));
+  size_t number_of_patches = patches_->size();
 
-  std::vector<MicrocanonicalSampler::SamplerParticleList> particles;
-  particles.resize(number_of_patches);
+  particles_ = smash::make_unique<std::vector<MicrocanonicalSampler::SamplerParticleList>>();
+  particles_->resize(number_of_patches);
 
   for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
     std::cout << "Initializing patch " << i_patch << std::endl;
-    sampler.initialize(patches[i_patch], particles[i_patch]);
+    sampler_->initialize((*patches_)[i_patch], (*particles_)[i_patch]);
   }
 
   std::cout << "Warming up." << std::endl;
-  step_until_sufficient_decorrelation(sampler, patches, particles, N_warmup);
+  step_until_sufficient_decorrelation(*sampler_, *patches_, *particles_, N_warmup);
   std::cout << "Finished warming up." << std::endl;
   size_t total_particles = 0;
   for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
-    total_particles += particles[i_patch].size();
+    total_particles += (*particles_)[i_patch].size();
   }
   std::cout << total_particles << " particles" << std::endl;
-  sampler.print_rejection_stats();
+  sampler_->print_rejection_stats();
+
+  /**
+   *   Initialize SMASH Experiment
+   */
+
+  // Initialize SMASH particle types, consistency with the sampler
+  // requires the particles file is the same for sampler and SMASH
+  auto particles_and_decays =
+      smash::load_particles_and_decaymodes(smash_particlelist_filename.c_str(),
+		                           smash_decaymodes_filename.c_str());
+  smash::ParticleType::create_type_list(particles_and_decays.first);
+  smash::DecayModes::load_decaymodes(particles_and_decays.second);
+  smash::ParticleType::check_consistency();
+
+  log.info("Seting up SMASH Experiment object");
+  bf::path output_path = default_output_path();
+  ensure_path_is_valid(output_path);
+
+  smash_experiment_ =
+      smash::make_unique<smash::Experiment<AfterburnerModus>>(config, output_path);
+  log.info("Finish initializing SMASH");
+
 }
 
-/*
+void AfterburnerModus::sampler_hadrons_to_smash_particles(
+    const std::vector<MicrocanonicalSampler::SamplerParticleList> &sampler_hadrons,
+    smash::Particles &smash_particles) {
+  smash_particles.reset();
+  const size_t n_patches = sampler_hadrons.size();
+  for (size_t i_patch = 0; i_patch < n_patches; i_patch++) {
+    for (const MicrocanonicalSampler::SamplerParticle &h : sampler_hadrons[i_patch]) {
+      const smash::FourVector p = h.momentum;
+      const double mass = p.abs();
+      const smash::FourVector r = (*patches_)[i_patch].cells()[h.cell_index].r;
+      this->try_create_particle(smash_particles, h.type->pdgcode(),
+                              r.x0(), r.x1(), r.x2(), r.x3(),
+                              mass, p.x0(), p.x1(), p.x2(), p.x3());
+    }
+  }
+}
+
 void SamplerAndSmash::Execute() {
-  modus->jetscape_hadrons_ = soft_particlization_sampler_->Hadron_list_;
-  const int n_events = modus->jetscape_hadrons_.size();
-  JSINFO << "SMASH: obtained " << n_events << " events from particlization";
-  smash::Particles *smash_particles = smash_experiment_->particles();
-  for (unsigned int i = 0; i < n_events; i++) {
-    JSINFO << "Event " << i << " SMASH starts with "
-           << modus->jetscape_hadrons_[i].size() << " particles.";
+  const auto &log = smash::logger<smash::LogArea::Experiment>();
+  for (size_t j = 0; j < N_samples_per_hydro_; j++) {
+    step_until_sufficient_decorrelation(*sampler_, *patches_, *particles_,
+                                        N_decorrelate_);
+    AfterburnerModus *modus = smash_experiment_->modus();
+    modus->input_hadrons_ = particles_.get();
+    modus->patches_ = patches_.get();
+    log.info("Event ", j);
     smash_experiment_->initialize_new_event();
     smash_experiment_->run_time_evolution();
     smash_experiment_->do_final_decays();
-    smash_experiment_->final_output(i);
-    smash_particles_to_JS_hadrons(*smash_particles,
-                                  modus->jetscape_hadrons_[i]);
-    JSINFO << modus->jetscape_hadrons_[i].size() << " hadrons from SMASH.";
+    smash_experiment_->final_output(j);
   }
 
-  for (size_t j = 0; j < N_printout; j++) {
-    step_until_sufficient_decorrelation(sampler, patches, particles,
-                                        N_decorrelate);
-    // print out
-    if (j % 10000 == 0 && j != 0) {
-      std::cout << "sample " << j << std::endl;
-    }
-  }
-
-  for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
-    MicrocanonicalSampler::QuantumNumbers cons(particles[i_patch]);
-    assert((cons.momentum - patches[i_patch].pmu()).abs() < 1.e-4);
-    assert(cons.B == patches[i_patch].B());
-    assert(cons.S == patches[i_patch].S());
-    assert(cons.Q == patches[i_patch].Q());
-  }
-  sampler.print_rejection_stats();
-
-}*/
+  // smash::Particles *smash_particles = smash_experiment_->particles();
+}
 
 int main() {
-  std::cout << "SMASH includes are working" << std::endl;
   SamplerAndSmash sampler_and_smash;
+  sampler_and_smash.Execute();
 }
