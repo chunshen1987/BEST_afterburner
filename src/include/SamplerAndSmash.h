@@ -38,13 +38,10 @@ class AfterburnerModus : public smash::ListModus {
 
 class SamplerAndSmash {
  public:
-  void InitSmash();
+  SamplerAndSmash();
  private:
 
-  std::string smash_config_filename_ = "../smash_config.yaml";
-              // empty string means default for SMASH
-  char *smash_particlelist_filename_ = nullptr,
-       *smash_decaymodes_filename_ = nullptr;
+  std::string smash_config_filename_ = "../config.yaml";
   std::string sampler_config_filename_ = "",
               sampler_hypersurface_filename_ = "";
   std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;

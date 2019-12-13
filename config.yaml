@@ -1,0 +1,20 @@
+Logging:
+    default: INFO
+
+General:
+    Modus:          Afterburner
+    End_Time:       200.0
+    Randomseed:     -1
+    Nevents:        1
+
+Output:
+    Output_Interval: 10.0
+    Particles:
+        Format:          ["Oscar2013"]
+
+Particles:   "../external_codes/smash/input/particles.txt"
+DecayModes:  "../external_codes/smash/input/decaymodes.txt"
+
+MicrocanonicalSampler:
+    HyperSurface:   "./surface.dat"
+    MaxMass:        2.5    # Maximal mass of hadrons to be sampled [GeV]

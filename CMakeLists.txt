@@ -30,4 +30,5 @@ set(SAMPLER_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_c
 message("SAMPLER_INCLUDES:  ${SAMPLER_INCLUDES}")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye")
 include_directories(${SAMPLER_INCLUDES})
+target_link_libraries(sampler_and_smash microcanonical_sampling)
 
