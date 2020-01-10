@@ -12,8 +12,7 @@ This is a code repostiory for a wrapper between individual particle sampler and 
     ./get_smash.sh
 ```
 
-If compilation went wrong, take a look at the cmake messages. Likely gsl, boost or Pythia is not found.
-Install these SMASH prequisites, see smash/Readme.md for details.
+    If compilation went wrong, take a look at the cmake messages. Likely gsl, boost or Pythia is not found. Install these SMASH prequisites, see smash/Readme.md for details.
 
 2. Get and compile the BEST particle sampler
 
