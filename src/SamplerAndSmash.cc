@@ -190,20 +190,37 @@ SamplerAndSmash::SamplerAndSmash() {
 
 }
 
-void AfterburnerModus::microcanonical_sampler_hadrons_to_smash_particles(
-    const std::vector<MicrocanonicalSampler::SamplerParticleList> &sampler_hadrons,
+void AfterburnerModus::sampler_hadrons_to_smash_particles(
     smash::Particles &smash_particles) {
   smash_particles.reset();
-  const size_t n_patches = sampler_hadrons.size();
-  for (size_t i_patch = 0; i_patch < n_patches; i_patch++) {
-    for (const MicrocanonicalSampler::SamplerParticle &h : sampler_hadrons[i_patch]) {
-      const smash::FourVector p = h.momentum;
+  const auto &log = smash::logger<smash::LogArea::Experiment>();
+
+  if (sampler_type_ == SamplerType::Microcanonical) {
+    const size_t n_patches = microcanonical_sampler_hadrons_->size();
+    for (size_t i_patch = 0; i_patch < n_patches; i_patch++) {
+      for (const MicrocanonicalSampler::SamplerParticle &h :
+               (*microcanonical_sampler_hadrons_)[i_patch]) {
+        const smash::FourVector p = h.momentum;
+        const double mass = p.abs();
+        const smash::FourVector r =
+            (*microcanonical_sampler_patches_)[i_patch].cells()[h.cell_index].r;
+        this->try_create_particle(smash_particles, h.type->pdgcode(),
+                                r.x0(), r.x1(), r.x2(), r.x3(),
+                                mass, p.x0(), p.x1(), p.x2(), p.x3());
+      }
+    }
+  } else if (sampler_type_ == SamplerType::Pratt) {
+    log.info("Transfering ", pratt_sampler_hadrons_->size(),
+             " particles from sampler to smash.");
+    for (const Cpart &h : *pratt_sampler_hadrons_) {
+      const smash::FourVector p(h.p[0], h.p[1], h.p[2], h.p[3]),
+                              r(h.r[0], h.r[1], h.r[2], h.r[3]);
       const double mass = p.abs();
-      const smash::FourVector r =
-          (*microcanonical_sampler_patches_)[i_patch].cells()[h.cell_index].r;
-      this->try_create_particle(smash_particles, h.type->pdgcode(),
-                              r.x0(), r.x1(), r.x2(), r.x3(),
-                              mass, p.x0(), p.x1(), p.x2(), p.x3());
+      log.info("pdg = ", h.pid, ", p = ", p, ", r = ", r);
+      this->try_create_particle(smash_particles,
+                                smash::PdgCode::from_decimal(h.pid),
+                                h.r[0], h.r[1], h.r[2], h.r[3],
+                                mass, h.p[0], h.p[1], h.p[2], h.p[3]);
     }
   }
 }
@@ -219,6 +236,13 @@ void SamplerAndSmash::Execute() {
         *microcanonical_sampler_particles_, N_decorrelate_);
       modus->microcanonical_sampler_hadrons_ = microcanonical_sampler_particles_.get();
       modus->microcanonical_sampler_patches_ = microcanonical_sampler_patches_.get();
+    }
+
+    if (sampler_type_ == SamplerType::Pratt) {
+      pratt_sampler_->MakeEvent();
+      modus->pratt_sampler_hadrons_ = &(pratt_sampler_->partlist->partvec);
+      // Fix a bug/feature of the wrong vector size in Pratt sampler
+      modus->pratt_sampler_hadrons_->resize(pratt_sampler_->partlist->nparts);
     }
 
     log.info("Event ", j);

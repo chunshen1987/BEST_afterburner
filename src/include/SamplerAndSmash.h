@@ -9,6 +9,7 @@
 #include "microcanonical_sampler/microcanonical_sampler.h"
 
 #include "pratt_sampler/master.h"
+#include "pratt_sampler/part.h"
 
 enum class SamplerType {
  Microcanonical,
@@ -31,22 +32,23 @@ class AfterburnerModus : public smash::ListModus {
   }
   void set_sampler_type(SamplerType sampler_type) { sampler_type_ = sampler_type; }
 
-  void microcanonical_sampler_hadrons_to_smash_particles(
-      const std::vector<MicrocanonicalSampler::SamplerParticleList> &sampler_hadrons,
-      smash::Particles &smash_particles);
+  void sampler_hadrons_to_smash_particles(smash::Particles &smash_particles);
 
   // This function overrides the function from ListModus.
   double initial_conditions(smash::Particles *particles,
                             const smash::ExperimentParameters &) {
-    if (sampler_type_ == SamplerType::Microcanonical) {
-      microcanonical_sampler_hadrons_to_smash_particles(
-          *microcanonical_sampler_hadrons_, *particles);
-    }
+    sampler_hadrons_to_smash_particles(*particles);
     backpropagate_to_same_time(*particles);
     return start_time_;
   }
+
+  // Microcanonical sampler hook-up
   std::vector<MicrocanonicalSampler::SamplerParticleList> *microcanonical_sampler_hadrons_;
   std::vector<HyperSurfacePatch> *microcanonical_sampler_patches_;
+
+  // Pratt sampler hook-up
+  std::vector<Cpart> *pratt_sampler_hadrons_;
+
  private:
   SamplerType sampler_type_;
 };
