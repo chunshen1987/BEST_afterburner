@@ -54,8 +54,12 @@ class SamplerAndSmash {
   SamplerAndSmash();
   void Execute();
  private:
+  SamplerType sampler_type_;
+
+  // Microcanonical sampler
   std::unique_ptr<std::vector<HyperSurfacePatch>> microcanonical_sampler_patches_;
-  std::unique_ptr<std::vector<MicrocanonicalSampler::SamplerParticleList>> microcanonical_sampler_particles_;
+  std::unique_ptr<std::vector<MicrocanonicalSampler::SamplerParticleList>>
+      microcanonical_sampler_particles_;
   std::unique_ptr<MicrocanonicalSampler> microcanonical_sampler_;
   size_t N_decorrelate_;
   size_t N_samples_per_hydro_;

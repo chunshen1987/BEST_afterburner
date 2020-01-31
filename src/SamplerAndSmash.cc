@@ -85,62 +85,70 @@ SamplerAndSmash::SamplerAndSmash() {
   /**
    *   Initialize sampler
    */
-  log.info("Initializing microcanonical sampler");
-  sampler::ParticleListFormat plist_format = sampler::ParticleListFormat::SMASH;
-  sampler::read_particle_list(smash_particlelist_filename, plist_format);
+  sampler_type_ = SamplerType::Microcanonical;  // Todo: get it from config
+  if (sampler_type_ == SamplerType::Microcanonical) {
+    log.info("Initializing microcanonical sampler");
+    sampler::ParticleListFormat plist_format = sampler::ParticleListFormat::SMASH;
+    sampler::read_particle_list(smash_particlelist_filename, plist_format);
 
-  smash::Configuration subconf = config["MicrocanonicalSampler"];
-  // Maximal hadron mass to be sampled
-  const double max_mass = subconf.take({"MaxMass"}, 2.5);
-  const double E_patch = subconf.take({"PatchEnergy"}, 10.0);
-  const size_t N_warmup = subconf.take({"WarmupSteps"}, 1E6);
-  N_decorrelate_ = subconf.take({"DecorrelationSteps"}, 2E2);
-  N_samples_per_hydro_ = subconf.take({"SamplesPerHydro"}, 100);
- 
-  // Quantum statistics is not implemented properly in the microcanonical sampler
-  constexpr bool quantum_statistics = false;
+    smash::Configuration subconf = config["MicrocanonicalSampler"];
+    // Maximal hadron mass to be sampled
+    const double max_mass = subconf.take({"MaxMass"}, 2.5);
+    const double E_patch = subconf.take({"PatchEnergy"}, 10.0);
+    const size_t N_warmup = subconf.take({"WarmupSteps"}, 1E6);
+    N_decorrelate_ = subconf.take({"DecorrelationSteps"}, 2E2);
+    N_samples_per_hydro_ = subconf.take({"SamplesPerHydro"}, 100);
 
-  /**
-   * A function, which defines, which species will be sampled. For
-   * a given species, if it returns true, the species will be sampled.
-   */
-  auto is_sampled_type = [&](ParticleTypePtr t) {
-    return t->is_hadron() && t->mass() < max_mass;
-  };
+    // Quantum statistics is not implemented properly in the microcanonical sampler
+    constexpr bool quantum_statistics = false;
 
-  std::string hypersurface_input_file = subconf.take({"HyperSurface"}); 
-  HyperSurfacePatch::InputFormat hypersurface_format =
-    HyperSurfacePatch::InputFormat::MUSIC_ASCII_3plus1D;
+    /**
+     * A function, which defines, which species will be sampled. For
+     * a given species, if it returns true, the species will be sampled.
+     */
+    auto is_sampled_type = [&](ParticleTypePtr t) {
+      return t->is_hadron() && t->mass() < max_mass;
+    };
 
-  // So far this is dummy, because we do not use 2+1D hydro hypersurface
-  std::array<double, 3> eta_for_2Dhydro = {-2.0, 2.0, 0.4};
+    std::string hypersurface_input_file = subconf.take({"HyperSurface"}); 
+    HyperSurfacePatch::InputFormat hypersurface_format =
+      HyperSurfacePatch::InputFormat::MUSIC_ASCII_3plus1D;
 
-  HyperSurfacePatch hyper(hypersurface_input_file, hypersurface_format,
-                        eta_for_2Dhydro, is_sampled_type, quantum_statistics);
-  log.info("Full hypersurface: ", hyper);
-  microcanonical_sampler_ = smash::make_unique<MicrocanonicalSampler>(is_sampled_type, 0, quantum_statistics);
+    // So far this is dummy, because we do not use 2+1D hydro hypersurface
+    std::array<double, 3> eta_for_2Dhydro = {-2.0, 2.0, 0.4};
 
-  microcanonical_sampler_patches_ = smash::make_unique<std::vector<HyperSurfacePatch>>(
-      hyper.split(E_patch));
-  size_t number_of_patches = microcanonical_sampler_patches_->size();
+    HyperSurfacePatch hyper(hypersurface_input_file, hypersurface_format,
+                          eta_for_2Dhydro, is_sampled_type, quantum_statistics);
+    log.info("Full hypersurface: ", hyper);
+    microcanonical_sampler_ = smash::make_unique<MicrocanonicalSampler>(
+      is_sampled_type, 0, quantum_statistics);
 
-  microcanonical_sampler_particles_ = smash::make_unique<std::vector<MicrocanonicalSampler::SamplerParticleList>>();
-  microcanonical_sampler_particles_->resize(number_of_patches);
+    microcanonical_sampler_patches_ = smash::make_unique<std::vector<HyperSurfacePatch>>(
+        hyper.split(E_patch));
+    size_t number_of_patches = microcanonical_sampler_patches_->size();
 
-  for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
-    std::cout << "Initializing patch " << i_patch << std::endl;
-    microcanonical_sampler_->initialize((*microcanonical_sampler_patches_)[i_patch], (*microcanonical_sampler_particles_)[i_patch]);
+    microcanonical_sampler_particles_ =
+      smash::make_unique<std::vector<MicrocanonicalSampler::SamplerParticleList>>();
+    microcanonical_sampler_particles_->resize(number_of_patches);
+
+    for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
+      std::cout << "Initializing patch " << i_patch << std::endl;
+      microcanonical_sampler_->initialize((*microcanonical_sampler_patches_)[i_patch],
+                                          (*microcanonical_sampler_particles_)[i_patch]);
+    }
+
+    std::cout << "Warming up." << std::endl;
+    step_until_sufficient_decorrelation(*microcanonical_sampler_,
+                                        *microcanonical_sampler_patches_,
+                                        *microcanonical_sampler_particles_, N_warmup);
+    std::cout << "Finished warming up." << std::endl;
+    size_t total_particles = 0;
+    for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
+      total_particles += (*microcanonical_sampler_particles_)[i_patch].size();
+    }
+    std::cout << total_particles << " particles" << std::endl;
+    microcanonical_sampler_->print_rejection_stats();
   }
-
-  std::cout << "Warming up." << std::endl;
-  step_until_sufficient_decorrelation(*microcanonical_sampler_, *microcanonical_sampler_patches_, *microcanonical_sampler_particles_, N_warmup);
-  std::cout << "Finished warming up." << std::endl;
-  size_t total_particles = 0;
-  for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
-    total_particles += (*microcanonical_sampler_particles_)[i_patch].size();
-  }
-  std::cout << total_particles << " particles" << std::endl;
-  microcanonical_sampler_->print_rejection_stats();
 
   /**
    *   Initialize SMASH Experiment
@@ -161,7 +169,7 @@ SamplerAndSmash::SamplerAndSmash() {
 
   smash_experiment_ =
       smash::make_unique<smash::Experiment<AfterburnerModus>>(config, output_path);
-  smash_experiment_->modus()->set_sampler_type(SamplerType::Microcanonical);
+  smash_experiment_->modus()->set_sampler_type(sampler_type_);
   log.info("Finish initializing SMASH");
 
 }
@@ -187,11 +195,16 @@ void AfterburnerModus::microcanonical_sampler_hadrons_to_smash_particles(
 void SamplerAndSmash::Execute() {
   const auto &log = smash::logger<smash::LogArea::Experiment>();
   for (size_t j = 0; j < N_samples_per_hydro_; j++) {
-    step_until_sufficient_decorrelation(*microcanonical_sampler_, *microcanonical_sampler_patches_, *microcanonical_sampler_particles_,
-                                        N_decorrelate_);
     AfterburnerModus *modus = smash_experiment_->modus();
-    modus->microcanonical_sampler_hadrons_ = microcanonical_sampler_particles_.get();
-    modus->microcanonical_sampler_patches_ = microcanonical_sampler_patches_.get();
+
+    if (sampler_type_ == SamplerType::Microcanonical) {
+      step_until_sufficient_decorrelation(
+        *microcanonical_sampler_, *microcanonical_sampler_patches_,
+        *microcanonical_sampler_particles_, N_decorrelate_);
+      modus->microcanonical_sampler_hadrons_ = microcanonical_sampler_particles_.get();
+      modus->microcanonical_sampler_patches_ = microcanonical_sampler_patches_.get();
+    }
+
     log.info("Event ", j);
     smash_experiment_->initialize_new_event();
     smash_experiment_->run_time_evolution();
