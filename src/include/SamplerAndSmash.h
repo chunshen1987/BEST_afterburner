@@ -12,10 +12,10 @@
 #include "pratt_sampler/part.h"
 
 enum class SamplerType {
- Microcanonical,
- Pratt,
- Sangwook,
- iSS,
+  Microcanonical,
+  Pratt,
+  Sangwook,
+  iSS,
 };
 
 /**
@@ -24,13 +24,15 @@ enum class SamplerType {
  * This class is needed to use SMASH as a 3rd party afterburner.
  */
 class AfterburnerModus : public smash::ListModus {
- public:
+public:
   // Unlike for ListModus there is no need to get any data from the config
   AfterburnerModus(smash::Configuration, const smash::ExperimentParameters &) {
     const auto &log = smash::logger<smash::LogArea::Main>();
     log.info("Constructing AfterburnerModus");
   }
-  void set_sampler_type(SamplerType sampler_type) { sampler_type_ = sampler_type; }
+  void set_sampler_type(SamplerType sampler_type) {
+    sampler_type_ = sampler_type;
+  }
 
   void sampler_hadrons_to_smash_particles(smash::Particles &smash_particles);
 
@@ -43,25 +45,28 @@ class AfterburnerModus : public smash::ListModus {
   }
 
   // Microcanonical sampler hook-up
-  std::vector<MicrocanonicalSampler::SamplerParticleList> *microcanonical_sampler_hadrons_;
+  std::vector<MicrocanonicalSampler::SamplerParticleList>
+      *microcanonical_sampler_hadrons_;
   std::vector<HyperSurfacePatch> *microcanonical_sampler_patches_;
 
   // Pratt sampler hook-up
   std::vector<Cpart> *pratt_sampler_hadrons_;
 
- private:
+private:
   SamplerType sampler_type_;
 };
 
 class SamplerAndSmash {
- public:
+public:
   SamplerAndSmash();
   void Execute();
- private:
+
+private:
   SamplerType sampler_type_;
 
   // Microcanonical sampler
-  std::unique_ptr<std::vector<HyperSurfacePatch>> microcanonical_sampler_patches_;
+  std::unique_ptr<std::vector<HyperSurfacePatch>>
+      microcanonical_sampler_patches_;
   std::unique_ptr<std::vector<MicrocanonicalSampler::SamplerParticleList>>
       microcanonical_sampler_particles_;
   std::unique_ptr<MicrocanonicalSampler> microcanonical_sampler_;
