@@ -26,9 +26,14 @@ if(${SMASH_FOUND})
   target_link_libraries(sampler_and_smash ${SMASH_LIBRARIES})
 endif(${SMASH_FOUND})
 
-set(SAMPLER_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye/include)
-message("SAMPLER_INCLUDES:  ${SAMPLER_INCLUDES}")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye")
+set(SAMPLER_INCLUDES
+   ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye/include
+   ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/best_sampler/software/include)
 include_directories(${SAMPLER_INCLUDES})
-target_link_libraries(sampler_and_smash microcanonical_sampling)
+message("SAMPLER_INCLUDES:  ${SAMPLER_INCLUDES}")
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/best_sampler")
+
+target_link_libraries(sampler_and_smash microcanonical_sampling pratt_sampler_shared)
 

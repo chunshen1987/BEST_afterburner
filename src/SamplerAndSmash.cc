@@ -85,7 +85,7 @@ SamplerAndSmash::SamplerAndSmash() {
   /**
    *   Initialize sampler
    */
-  sampler_type_ = SamplerType::Microcanonical;  // Todo: get it from config
+  sampler_type_ = SamplerType::Pratt; //Microcanonical;  // Todo: get it from config
   if (sampler_type_ == SamplerType::Microcanonical) {
     log.info("Initializing microcanonical sampler");
     sampler::ParticleListFormat plist_format = sampler::ParticleListFormat::SMASH;
@@ -148,6 +148,22 @@ SamplerAndSmash::SamplerAndSmash() {
     }
     std::cout << total_particles << " particles" << std::endl;
     microcanonical_sampler_->print_rejection_stats();
+  }
+
+  if (sampler_type_ == SamplerType::Pratt) {
+    log.info("Initializing Pratt sampler");
+    pratt_sampler_parameters_.ReadParsFromFile("parameters.dat");
+    log.info("Creating particle list");
+    pratt_sampler_particlelist_ = smash::make_unique<CpartList>(&pratt_sampler_parameters_);
+    log.info("Creating mean field");
+    pratt_sampler_meanfield_ = smash::make_unique<CmeanField_Simple>(&pratt_sampler_parameters_);
+    log.info("Creating sampler");
+
+    pratt_sampler_ = smash::make_unique<CmasterSampler>(&pratt_sampler_parameters_);
+    pratt_sampler_->meanfield = pratt_sampler_meanfield_.get();
+    pratt_sampler_->partlist = pratt_sampler_particlelist_.get();
+    pratt_sampler_->randy->reset(time(NULL));
+    pratt_sampler_->ReadHyper2D();
   }
 
   /**

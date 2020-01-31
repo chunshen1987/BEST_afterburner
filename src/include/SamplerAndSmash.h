@@ -8,6 +8,8 @@
 #include "microcanonical_sampler/hydro_cells.h"
 #include "microcanonical_sampler/microcanonical_sampler.h"
 
+#include "pratt_sampler/master.h"
+
 enum class SamplerType {
  Microcanonical,
  Pratt,
@@ -63,6 +65,12 @@ class SamplerAndSmash {
   std::unique_ptr<MicrocanonicalSampler> microcanonical_sampler_;
   size_t N_decorrelate_;
   size_t N_samples_per_hydro_;
+
+  // Pratt sampler
+  CparameterMap pratt_sampler_parameters_;
+  std::unique_ptr<CmeanField_Simple> pratt_sampler_meanfield_;
+  std::unique_ptr<CpartList> pratt_sampler_particlelist_;
+  std::unique_ptr<CmasterSampler> pratt_sampler_;
 
   std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
 };
