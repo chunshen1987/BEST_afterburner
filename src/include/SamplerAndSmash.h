@@ -8,6 +8,13 @@
 #include "microcanonical_sampler/hydro_cells.h"
 #include "microcanonical_sampler/microcanonical_sampler.h"
 
+enum class SamplerType {
+ Microcanonical,
+ Pratt,
+ Sangwook,
+ iSS,
+};
+
 /**
  * An Afterburner modus, which acts similarly to SMASH ListModus,
  * external particles of smash::Particles class, not from file.
@@ -20,19 +27,26 @@ class AfterburnerModus : public smash::ListModus {
     const auto &log = smash::logger<smash::LogArea::Main>();
     log.info("Constructing AfterburnerModus");
   }
+  void set_sampler_type(SamplerType sampler_type) { sampler_type_ = sampler_type; }
 
-  void sampler_hadrons_to_smash_particles(
+  void microcanonical_sampler_hadrons_to_smash_particles(
       const std::vector<MicrocanonicalSampler::SamplerParticleList> &sampler_hadrons,
       smash::Particles &smash_particles);
+
   // This function overrides the function from ListModus.
   double initial_conditions(smash::Particles *particles,
                             const smash::ExperimentParameters &) {
-    sampler_hadrons_to_smash_particles(*input_hadrons_, *particles);
+    if (sampler_type_ == SamplerType::Microcanonical) {
+      microcanonical_sampler_hadrons_to_smash_particles(
+          *microcanonical_sampler_hadrons_, *particles);
+    }
     backpropagate_to_same_time(*particles);
     return start_time_;
   }
-  std::vector<MicrocanonicalSampler::SamplerParticleList> *input_hadrons_;
-  std::vector<HyperSurfacePatch> *patches_;
+  std::vector<MicrocanonicalSampler::SamplerParticleList> *microcanonical_sampler_hadrons_;
+  std::vector<HyperSurfacePatch> *microcanonical_sampler_patches_;
+ private:
+  SamplerType sampler_type_;
 };
 
 class SamplerAndSmash {
@@ -40,12 +54,13 @@ class SamplerAndSmash {
   SamplerAndSmash();
   void Execute();
  private:
-  std::unique_ptr<std::vector<HyperSurfacePatch>> patches_;
-  std::unique_ptr<std::vector<MicrocanonicalSampler::SamplerParticleList>> particles_;
-  std::unique_ptr<MicrocanonicalSampler> sampler_;
-  std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
+  std::unique_ptr<std::vector<HyperSurfacePatch>> microcanonical_sampler_patches_;
+  std::unique_ptr<std::vector<MicrocanonicalSampler::SamplerParticleList>> microcanonical_sampler_particles_;
+  std::unique_ptr<MicrocanonicalSampler> microcanonical_sampler_;
   size_t N_decorrelate_;
   size_t N_samples_per_hydro_;
+
+  std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
 };
 
 #endif // SAMPLER_AND_SMASH_H

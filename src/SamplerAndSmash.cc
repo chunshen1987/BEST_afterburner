@@ -118,29 +118,29 @@ SamplerAndSmash::SamplerAndSmash() {
   HyperSurfacePatch hyper(hypersurface_input_file, hypersurface_format,
                         eta_for_2Dhydro, is_sampled_type, quantum_statistics);
   log.info("Full hypersurface: ", hyper);
-  sampler_ = smash::make_unique<MicrocanonicalSampler>(is_sampled_type, 0, quantum_statistics);
+  microcanonical_sampler_ = smash::make_unique<MicrocanonicalSampler>(is_sampled_type, 0, quantum_statistics);
 
-  patches_ = smash::make_unique<std::vector<HyperSurfacePatch>>(
+  microcanonical_sampler_patches_ = smash::make_unique<std::vector<HyperSurfacePatch>>(
       hyper.split(E_patch));
-  size_t number_of_patches = patches_->size();
+  size_t number_of_patches = microcanonical_sampler_patches_->size();
 
-  particles_ = smash::make_unique<std::vector<MicrocanonicalSampler::SamplerParticleList>>();
-  particles_->resize(number_of_patches);
+  microcanonical_sampler_particles_ = smash::make_unique<std::vector<MicrocanonicalSampler::SamplerParticleList>>();
+  microcanonical_sampler_particles_->resize(number_of_patches);
 
   for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
     std::cout << "Initializing patch " << i_patch << std::endl;
-    sampler_->initialize((*patches_)[i_patch], (*particles_)[i_patch]);
+    microcanonical_sampler_->initialize((*microcanonical_sampler_patches_)[i_patch], (*microcanonical_sampler_particles_)[i_patch]);
   }
 
   std::cout << "Warming up." << std::endl;
-  step_until_sufficient_decorrelation(*sampler_, *patches_, *particles_, N_warmup);
+  step_until_sufficient_decorrelation(*microcanonical_sampler_, *microcanonical_sampler_patches_, *microcanonical_sampler_particles_, N_warmup);
   std::cout << "Finished warming up." << std::endl;
   size_t total_particles = 0;
   for (size_t i_patch = 0; i_patch < number_of_patches; i_patch++) {
-    total_particles += (*particles_)[i_patch].size();
+    total_particles += (*microcanonical_sampler_particles_)[i_patch].size();
   }
   std::cout << total_particles << " particles" << std::endl;
-  sampler_->print_rejection_stats();
+  microcanonical_sampler_->print_rejection_stats();
 
   /**
    *   Initialize SMASH Experiment
@@ -161,11 +161,12 @@ SamplerAndSmash::SamplerAndSmash() {
 
   smash_experiment_ =
       smash::make_unique<smash::Experiment<AfterburnerModus>>(config, output_path);
+  smash_experiment_->modus()->set_sampler_type(SamplerType::Microcanonical);
   log.info("Finish initializing SMASH");
 
 }
 
-void AfterburnerModus::sampler_hadrons_to_smash_particles(
+void AfterburnerModus::microcanonical_sampler_hadrons_to_smash_particles(
     const std::vector<MicrocanonicalSampler::SamplerParticleList> &sampler_hadrons,
     smash::Particles &smash_particles) {
   smash_particles.reset();
@@ -174,7 +175,8 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
     for (const MicrocanonicalSampler::SamplerParticle &h : sampler_hadrons[i_patch]) {
       const smash::FourVector p = h.momentum;
       const double mass = p.abs();
-      const smash::FourVector r = (*patches_)[i_patch].cells()[h.cell_index].r;
+      const smash::FourVector r =
+          (*microcanonical_sampler_patches_)[i_patch].cells()[h.cell_index].r;
       this->try_create_particle(smash_particles, h.type->pdgcode(),
                               r.x0(), r.x1(), r.x2(), r.x3(),
                               mass, p.x0(), p.x1(), p.x2(), p.x3());
@@ -185,11 +187,11 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
 void SamplerAndSmash::Execute() {
   const auto &log = smash::logger<smash::LogArea::Experiment>();
   for (size_t j = 0; j < N_samples_per_hydro_; j++) {
-    step_until_sufficient_decorrelation(*sampler_, *patches_, *particles_,
+    step_until_sufficient_decorrelation(*microcanonical_sampler_, *microcanonical_sampler_patches_, *microcanonical_sampler_particles_,
                                         N_decorrelate_);
     AfterburnerModus *modus = smash_experiment_->modus();
-    modus->input_hadrons_ = particles_.get();
-    modus->patches_ = patches_.get();
+    modus->microcanonical_sampler_hadrons_ = microcanonical_sampler_particles_.get();
+    modus->microcanonical_sampler_patches_ = microcanonical_sampler_patches_.get();
     log.info("Event ", j);
     smash_experiment_->initialize_new_event();
     smash_experiment_->run_time_evolution();
