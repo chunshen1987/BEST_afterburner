@@ -5,7 +5,7 @@ General:
     Modus:          Afterburner
     End_Time:       200.0
     Randomseed:     -1
-    Nevents:        1
+    Nevents:        1       # Number of (sampler + smash) events
     SamplerType:    Pratt   # options so far: Microcanonical, Pratt
 
 Output:
@@ -33,6 +33,5 @@ PrattSampler:
     SAMPLER_SIGMAFMAX: 0.093
     SAMPLER_NSIGMAF: 1
     SAMPLER_SETMU0: false
-    SAMPLER_NEVENTS: 1
     SAMPLER_BOSE_CORR: true
     SAMPLER_N_BOSE_CORR: 5

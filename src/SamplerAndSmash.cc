@@ -86,6 +86,8 @@ SamplerAndSmash::SamplerAndSmash() {
    *   Initialize sampler
    */
   std::string sampler_type_str = config.take({"General", "SamplerType"});
+  N_samples_per_hydro_ = config.read({"General", "Nevents"});
+
   if (sampler_type_str == "Microcanonical") {
     sampler_type_ = SamplerType::Microcanonical;
   } else if (sampler_type_str == "Pratt") {
@@ -105,7 +107,6 @@ SamplerAndSmash::SamplerAndSmash() {
     const double E_patch = subconf.take({"PatchEnergy"}, 10.0);
     const size_t N_warmup = subconf.take({"WarmupSteps"}, 1E6);
     N_decorrelate_ = subconf.take({"DecorrelationSteps"}, 2E2);
-    N_samples_per_hydro_ = subconf.take({"SamplesPerHydro"}, 100);
 
     // Quantum statistics is not implemented properly in the microcanonical sampler
     constexpr bool quantum_statistics = false;
