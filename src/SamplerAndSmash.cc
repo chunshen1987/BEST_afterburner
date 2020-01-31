@@ -203,6 +203,12 @@ SamplerAndSmash::SamplerAndSmash() {
   smash_experiment_->modus()->set_sampler_type(sampler_type_);
   log.info("Finish initializing SMASH");
 
+  // Complain, if there are unused configuration values
+  const std::string report = config.unused_values_report();
+  if (report != "{}") {
+    log.warn("The following configuration values were not used:\n", report);
+  }
+
 }
 
 void AfterburnerModus::sampler_hadrons_to_smash_particles(
