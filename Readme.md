@@ -1,6 +1,6 @@
 # BEST Afterburner
 
-This is a code repostiory for a wrapper between individual particle sampler and hadronic transport package [SMASH](https://smash-transport.github.io). 
+This is a wrapper, that combines different particle samplers and a hadronic transport package [SMASH](https://smash-transport.github.io).
 
 
 ## Install
@@ -19,6 +19,15 @@ If compilation went wrong, take a look at the cmake messages. Likely gsl, boost 
     cd external_codes
     ./get_best_sampler.sh
 ```
+
+* Get and compile the microcanonical particle sampler
+
+```
+    cd external_codes
+    ./get_microcanonical_sampler.sh
+```
+
+
 * Compile the wrapper for particle sampler and SMASH
 
 ```
@@ -28,3 +37,7 @@ If compilation went wrong, take a look at the cmake messages. Likely gsl, boost 
     make
 ```
 
+* Configuring and running
+
+The configuration for ALL codes (SMASH, and all samplers) is in the config.yaml file.
+For explanations of parameters see the help of specific codes.
