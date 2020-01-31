@@ -6,15 +6,33 @@ General:
     End_Time:       200.0
     Randomseed:     -1
     Nevents:        1
+    SamplerType:    Pratt   # options so far: Microcanonical, Pratt
 
 Output:
     Output_Interval: 10.0
     Particles:
         Format:          ["Oscar2013"]
 
+# Both SMASH and microcanonical sampler are set up from these
 Particles:   "../external_codes/smash/input/particles.txt"
 DecayModes:  "../external_codes/smash/input/decaymodes.txt"
 
 MicrocanonicalSampler:
     HyperSurface:   "./surface.dat"
     MaxMass:        2.5    # Maximal mass of hadrons to be sampled [GeV]
+
+PrattSampler:
+    RESONANCES_INFO_FILE:   "../external_codes/best_sampler/local/resinfo/pdg-SMASH.dat"
+    RESONANCES_DECAYS_FILE: "../external_codes/best_sampler/local/resinfo/pdg-SMASH.dat"
+    HYPER_INFO_FILE:        "../external_codes/best_sampler/local/include/surface_2D.dat"
+    SAMPLER_SFDIRNAME:      "../external_codes/best_sampler/local/resinfo/spectralfunctions"
+    SAMPLER_TFMIN: 0.140
+    SAMPLER_TFMAX: 0.160
+    SAMPLER_NTF: 10
+    SAMPLER_SIGMAFMIN: 0.093
+    SAMPLER_SIGMAFMAX: 0.093
+    SAMPLER_NSIGMAF: 1
+    SAMPLER_SETMU0: false
+    SAMPLER_NEVENTS: 1
+    SAMPLER_BOSE_CORR: true
+    SAMPLER_N_BOSE_CORR: 5

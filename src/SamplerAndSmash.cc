@@ -85,7 +85,15 @@ SamplerAndSmash::SamplerAndSmash() {
   /**
    *   Initialize sampler
    */
-  sampler_type_ = SamplerType::Pratt; //Microcanonical;  // Todo: get it from config
+  std::string sampler_type_str = config.take({"General", "SamplerType"});
+  if (sampler_type_str == "Microcanonical") {
+    sampler_type_ = SamplerType::Microcanonical;
+  } else if (sampler_type_str == "Pratt") {
+    sampler_type_ = SamplerType::Pratt;
+  } else {
+    log.error("Unknown sampler type: ", sampler_type_str);
+    throw std::runtime_error("Unknown sampler type.");
+  }
   if (sampler_type_ == SamplerType::Microcanonical) {
     log.info("Initializing microcanonical sampler");
     sampler::ParticleListFormat plist_format = sampler::ParticleListFormat::SMASH;
@@ -152,12 +160,18 @@ SamplerAndSmash::SamplerAndSmash() {
 
   if (sampler_type_ == SamplerType::Pratt) {
     log.info("Initializing Pratt sampler");
-    pratt_sampler_parameters_.ReadParsFromFile("parameters.dat");
-    log.info("Creating particle list");
+    smash::Configuration pratt_sampler_config = config["PrattSampler"];
+    for (const std::string key : pratt_sampler_config.list_upmost_nodes()) {
+      std::string value = pratt_sampler_config.take({key.c_str()});
+      log.info("Pratt sampler: using option ", key, " = ", value);
+      pratt_sampler_parameters_.set(key, value);
+    }
+
+    log.info("Pratt sampler: creating particle list");
     pratt_sampler_particlelist_ = smash::make_unique<CpartList>(&pratt_sampler_parameters_);
-    log.info("Creating mean field");
+    log.info("Pratt sampler: creating mean field");
     pratt_sampler_meanfield_ = smash::make_unique<CmeanField_Simple>(&pratt_sampler_parameters_);
-    log.info("Creating sampler");
+    log.info("Pratt sampler: creating sampler object");
 
     pratt_sampler_ = smash::make_unique<CmasterSampler>(&pratt_sampler_parameters_);
     pratt_sampler_->meanfield = pratt_sampler_meanfield_.get();
@@ -216,7 +230,7 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
       const smash::FourVector p(h.p[0], h.p[1], h.p[2], h.p[3]),
                               r(h.r[0], h.r[1], h.r[2], h.r[3]);
       const double mass = p.abs();
-      log.info("pdg = ", h.pid, ", p = ", p, ", r = ", r);
+      log.debug("pdg = ", h.pid, ", p = ", p, ", r = ", r);
       this->try_create_particle(smash_particles,
                                 smash::PdgCode::from_decimal(h.pid),
                                 h.r[0], h.r[1], h.r[2], h.r[3],
@@ -251,8 +265,6 @@ void SamplerAndSmash::Execute() {
     smash_experiment_->do_final_decays();
     smash_experiment_->final_output(j);
   }
-
-  // smash::Particles *smash_particles = smash_experiment_->particles();
 }
 
 int main() {
