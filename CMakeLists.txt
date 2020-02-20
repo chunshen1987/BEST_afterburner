@@ -37,3 +37,12 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/best_sampler")
 
 target_link_libraries(sampler_and_smash microcanonical_sampling msu_sampler_shared)
 
+option(USE_ROOT "Turn this off to disable ROOT output support in SMASH." ON)
+if (USE_ROOT)
+  find_package(ROOT 5.34)
+  if (ROOT_FOUND)
+    include_directories(SYSTEM "${ROOT_INCLUDE_DIR}")
+    add_definitions(-DSMASH_USE_ROOT)
+    target_link_libraries(sampler_and_smash ${ROOT_LIBRARIES})
+  endif ()
+endif (USE_ROOT)
