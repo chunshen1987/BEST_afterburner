@@ -89,8 +89,8 @@ SamplerAndSmash::SamplerAndSmash() {
 
   if (sampler_type_str == "Microcanonical") {
     sampler_type_ = SamplerType::Microcanonical;
-  } else if (sampler_type_str == "Pratt") {
-    sampler_type_ = SamplerType::Pratt;
+  } else if (sampler_type_str == "MSU") {
+    sampler_type_ = SamplerType::MSU;
   } else {
     log.error("Unknown sampler type: ", sampler_type_str);
     throw std::runtime_error("Unknown sampler type.");
@@ -163,29 +163,29 @@ SamplerAndSmash::SamplerAndSmash() {
     microcanonical_sampler_->print_rejection_stats();
   }
 
-  if (sampler_type_ == SamplerType::Pratt) {
-    log.info("Initializing Pratt sampler");
-    smash::Configuration pratt_sampler_config = config["PrattSampler"];
-    for (const std::string key : pratt_sampler_config.list_upmost_nodes()) {
-      std::string value = pratt_sampler_config.take({key.c_str()});
-      log.info("Pratt sampler: using option ", key, " = ", value);
-      pratt_sampler_parameters_.set(key, value);
+  if (sampler_type_ == SamplerType::MSU) {
+    log.info("Initializing MSU sampler");
+    smash::Configuration msu_sampler_config = config["MSUSampler"];
+    for (const std::string key : msu_sampler_config.list_upmost_nodes()) {
+      std::string value = msu_sampler_config.take({key.c_str()});
+      log.info("MSU sampler: using option ", key, " = ", value);
+      msu_sampler_parameters_.set(key, value);
     }
 
-    log.info("Pratt sampler: creating particle list");
-    pratt_sampler_particlelist_ =
-        smash::make_unique<CpartList>(&pratt_sampler_parameters_);
-    log.info("Pratt sampler: creating mean field");
-    pratt_sampler_meanfield_ =
-        smash::make_unique<CmeanField_Simple>(&pratt_sampler_parameters_);
-    log.info("Pratt sampler: creating sampler object");
+    log.info("MSU sampler: creating particle list");
+    msu_sampler_particlelist_ =
+        smash::make_unique<msu_sampler::CpartList>(&msu_sampler_parameters_);
+    log.info("MSU sampler: creating mean field");
+    msu_sampler_meanfield_ =
+        smash::make_unique<msu_sampler::CmeanField_Simple>(&msu_sampler_parameters_);
+    log.info("MSU sampler: creating sampler object");
 
-    pratt_sampler_ =
-        smash::make_unique<CmasterSampler>(&pratt_sampler_parameters_);
-    pratt_sampler_->meanfield = pratt_sampler_meanfield_.get();
-    pratt_sampler_->partlist = pratt_sampler_particlelist_.get();
-    pratt_sampler_->randy->reset(time(NULL));
-    pratt_sampler_->ReadHyper2D();
+    msu_sampler_ =
+        smash::make_unique<msu_sampler::CmasterSampler>(&msu_sampler_parameters_);
+    msu_sampler_->meanfield = msu_sampler_meanfield_.get();
+    msu_sampler_->partlist = msu_sampler_particlelist_.get();
+    msu_sampler_->randy->reset(time(NULL));
+    msu_sampler_->ReadHyper();
   }
 
   /**
@@ -235,10 +235,10 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
                                   p.x0(), p.x1(), p.x2(), p.x3());
       }
     }
-  } else if (sampler_type_ == SamplerType::Pratt) {
-    log.info("Transfering ", pratt_sampler_hadrons_->size(),
+  } else if (sampler_type_ == SamplerType::MSU) {
+    log.info("Transfering ", msu_sampler_hadrons_->size(),
              " particles from sampler to smash.");
-    for (const Cpart &h : *pratt_sampler_hadrons_) {
+    for (const msu_sampler::Cpart &h : *msu_sampler_hadrons_) {
       const smash::FourVector p(h.p[0], h.p[1], h.p[2], h.p[3]),
                               r(h.r[0], h.r[1], h.r[2], h.r[3]);
       const double mass = p.abs();
@@ -266,11 +266,11 @@ void SamplerAndSmash::Execute() {
           microcanonical_sampler_patches_.get();
     }
 
-    if (sampler_type_ == SamplerType::Pratt) {
-      pratt_sampler_->MakeEvent();
-      modus->pratt_sampler_hadrons_ = &(pratt_sampler_->partlist->partvec);
-      // Fix a bug/feature of the wrong vector size in Pratt sampler
-      modus->pratt_sampler_hadrons_->resize(pratt_sampler_->partlist->nparts);
+    if (sampler_type_ == SamplerType::MSU) {
+      msu_sampler_->MakeEvent();
+      modus->msu_sampler_hadrons_ = &(msu_sampler_->partlist->partvec);
+      // Fix a bug/feature of the wrong vector size in MSU sampler
+      modus->msu_sampler_hadrons_->resize(msu_sampler_->partlist->nparts);
     }
 
     log.info("Event ", j);

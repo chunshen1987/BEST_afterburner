@@ -35,5 +35,5 @@ message("SAMPLER_INCLUDES:  ${SAMPLER_INCLUDES}")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/best_sampler")
 
-target_link_libraries(sampler_and_smash microcanonical_sampling pratt_sampler_shared)
+target_link_libraries(sampler_and_smash microcanonical_sampling msu_sampler_shared)
 

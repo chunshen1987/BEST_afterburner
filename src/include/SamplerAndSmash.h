@@ -8,12 +8,12 @@
 #include "microcanonical_sampler/hydro_cells.h"
 #include "microcanonical_sampler/microcanonical_sampler.h"
 
-#include "pratt_sampler/master.h"
-#include "pratt_sampler/part.h"
+#include "msu_sampler/master.h"
+#include "msu_sampler/part.h"
 
 enum class SamplerType {
   Microcanonical,
-  Pratt,
+  MSU,
   Sangwook,
   iSS,
 };
@@ -49,8 +49,8 @@ public:
       *microcanonical_sampler_hadrons_;
   std::vector<HyperSurfacePatch> *microcanonical_sampler_patches_;
 
-  // Pratt sampler hook-up
-  std::vector<Cpart> *pratt_sampler_hadrons_;
+  // MSU sampler hook-up
+  std::vector<msu_sampler::Cpart> *msu_sampler_hadrons_;
 
 private:
   SamplerType sampler_type_;
@@ -73,11 +73,11 @@ private:
   size_t N_decorrelate_;
   size_t N_samples_per_hydro_;
 
-  // Pratt sampler
-  CparameterMap pratt_sampler_parameters_;
-  std::unique_ptr<CmeanField_Simple> pratt_sampler_meanfield_;
-  std::unique_ptr<CpartList> pratt_sampler_particlelist_;
-  std::unique_ptr<CmasterSampler> pratt_sampler_;
+  // MSU sampler
+  msu_sampler::CparameterMap msu_sampler_parameters_;
+  std::unique_ptr<msu_sampler::CmeanField_Simple> msu_sampler_meanfield_;
+  std::unique_ptr<msu_sampler::CpartList> msu_sampler_particlelist_;
+  std::unique_ptr<msu_sampler::CmasterSampler> msu_sampler_;
 
   std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
 };

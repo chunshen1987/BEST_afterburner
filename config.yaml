@@ -6,7 +6,7 @@ General:
     End_Time:       200.0
     Randomseed:     -1
     Nevents:        1       # Number of (sampler + smash) events
-    SamplerType:    Pratt   # options so far: Microcanonical, Pratt
+    SamplerType:    MSU   # options so far: Microcanonical, MSU
 
 Output:
     Output_Interval: 10.0
@@ -21,7 +21,7 @@ MicrocanonicalSampler:
     HyperSurface:   "./surface.dat"
     MaxMass:        2.5    # Maximal mass of hadrons to be sampled [GeV]
 
-PrattSampler:
+MSUSampler:
     RESONANCES_INFO_FILE:   "../external_codes/best_sampler/local/resinfo/pdg-SMASH.dat"
     RESONANCES_DECAYS_FILE: "../external_codes/best_sampler/local/resinfo/pdg-SMASH.dat"
     HYPER_INFO_FILE:        "../external_codes/best_sampler/local/include/surface_2D.dat"
