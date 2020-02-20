@@ -22,10 +22,10 @@ MicrocanonicalSampler:
     MaxMass:        2.5    # Maximal mass of hadrons to be sampled [GeV]
 
 MSUSampler:
-    RESONANCES_INFO_FILE:   "../external_codes/best_sampler/local/resinfo/pdg-SMASH.dat"
-    RESONANCES_DECAYS_FILE: "../external_codes/best_sampler/local/resinfo/pdg-SMASH.dat"
-    HYPER_INFO_FILE:        "../external_codes/best_sampler/local/include/surface_2D.dat"
-    SAMPLER_SFDIRNAME:      "../external_codes/best_sampler/local/resinfo/spectralfunctions"
+    RESONANCES_INFO_FILE:   "../external_codes/best_sampler/software/resinfo/pdg-SMASH.dat"
+    RESONANCES_DECAYS_FILE: "../external_codes/best_sampler/software/resinfo/pdg-SMASH.dat"
+    HYPER_INFO_FILE:        "surface_eps_0.26.dat" #"../external_codes/best_sampler/software/include/surface_2D.dat"
+    SAMPLER_SFDIRNAME:      "../external_codes/best_sampler/software/resinfo/spectralfunctions"
     SAMPLER_TFMIN: 0.140
     SAMPLER_TFMAX: 0.160
     SAMPLER_NTF: 10
