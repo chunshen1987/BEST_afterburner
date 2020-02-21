@@ -15,8 +15,8 @@
 namespace bf = boost::filesystem;
 
 namespace {
-bf::path default_output_path() {
-  const bf::path p = bf::absolute("smash_output");
+bf::path default_output_path(std::string output_folder) {
+  const bf::path p = bf::absolute(output_folder);
   if (!bf::exists(p)) {
     return p / "0";
   }
@@ -201,7 +201,9 @@ SamplerAndSmash::SamplerAndSmash() {
   smash::ParticleType::check_consistency();
 
   log.info("Seting up SMASH Experiment object");
-  bf::path output_path = default_output_path();
+  std::string output_dir = config.take({"Output_Directory"},
+                                       std::string("smash_output"));
+  bf::path output_path = default_output_path(output_dir);
   ensure_path_is_valid(output_path);
 
   smash_experiment_ = smash::make_unique<smash::Experiment<AfterburnerModus>>(

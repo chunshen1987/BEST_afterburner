@@ -8,6 +8,7 @@ General:
     Nevents:        1       # Number of (sampler + smash) events
     SamplerType:    MSU   # options so far: Microcanonical, MSU
 
+Output_Directory:  smash_output_wo_spectral
 Output:
     Output_Interval: 10.0
     Particles:
