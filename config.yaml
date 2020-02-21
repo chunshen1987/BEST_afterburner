@@ -35,3 +35,4 @@ MSUSampler:
     SAMPLER_SETMU0: false
     SAMPLER_BOSE_CORR: true
     SAMPLER_N_BOSE_CORR: 5
+    SAMPLER_USE_POLE_MASS: false
