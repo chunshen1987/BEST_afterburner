@@ -80,11 +80,11 @@ SamplerAndSmash::SamplerAndSmash() {
   std::string smash_particlelist_filename = config.take({"Particles"});
   std::string smash_decaymodes_filename = config.take({"DecayModes"});
 
-  /**
-   *   Initialize sampler
-   */
-  std::string sampler_type_str = config.take({"General", "SamplerType"});
-  N_samples_per_hydro_ = config.read({"General", "Nevents"});
+    /**
+     *   Initialize sampler
+     */
+    std::string sampler_type_str = config.take({"General", "SamplerType"});
+    N_samples_per_hydro_ = config.read({"General", "Nevents"});
 
     if (sampler_type_str == "Microcanonical") {
         sampler_type_ = SamplerType::Microcanonical;
@@ -200,6 +200,10 @@ SamplerAndSmash::SamplerAndSmash() {
         }
         std::string input_file = iSS_config.take({"iSS_INPUTFILE"});
         std::string work_path  = iSS_config.take({"WORKING_PATH"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+                        "number_of_repeated_sampling", N_samples_per_hydro_);
+
+        // set default parameters
         iSpectraSampler_ptr_ = std::unique_ptr<iSS> (new iSS(work_path));
         iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal(
@@ -207,11 +211,8 @@ SamplerAndSmash::SamplerAndSmash() {
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_OSCAR_format", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_gzip_format", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("store_samples_in_memory", 1);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
-                        "number_of_repeated_sampling", N_samples_per_hydro_);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("perform_decays", 0);
 
-        // set default parameters
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_shear", 1);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_bulk", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_rhob", 0);
