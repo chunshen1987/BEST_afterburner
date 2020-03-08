@@ -12,6 +12,6 @@ mkdir -p build
 (
     cd build
     rm -fr *
-    cmake .. -DPythia_CONFIG_EXECUTABLE=${PYTHIA8DIR}/bin/pythia8-config
+    cmake .. -DPythia_CONFIG_EXECUTABLE=${PYTHIA8DIR}/bin/pythia8-config -DiSS=ON
     make -j${number_of_cores}
 )
