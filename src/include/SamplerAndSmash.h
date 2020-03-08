@@ -35,9 +35,10 @@ public:
     const auto &log = smash::logger<smash::LogArea::Main>();
     log.info("Constructing AfterburnerModus");
   }
-  void set_sampler_type(SamplerType sampler_type) {
-    sampler_type_ = sampler_type;
-  }
+
+    void set_sampler_type(SamplerType sampler_type) {
+        sampler_type_ = sampler_type;
+    }
 
   void sampler_hadrons_to_smash_particles(smash::Particles &smash_particles);
 
@@ -57,8 +58,13 @@ public:
   // MSU sampler hook-up
   std::vector<msu_sampler::Cpart> *msu_sampler_hadrons_;
 
-private:
-  SamplerType sampler_type_;
+    // iSS sampler hook-up
+#ifdef iSSFlag
+    std::vector<iSS_Hadron> *iSS_hadrons_;
+#endif
+
+ private:
+    SamplerType sampler_type_;
 };
 
 class SamplerAndSmash {

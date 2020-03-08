@@ -202,6 +202,34 @@ SamplerAndSmash::SamplerAndSmash() {
         std::string work_path  = iSS_config.take({"WORKING_PATH"});
         iSpectraSampler_ptr_ = std::unique_ptr<iSS> (new iSS(work_path));
         iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+                                            "output_samples_into_files", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_OSCAR_format", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_gzip_format", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("store_samples_in_memory", 1);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+                        "number_of_repeated_sampling", N_samples_per_hydro_);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("perform_decays", 0);
+
+        // set default parameters
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_shear", 1);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_bulk", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_rhob", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_diff", 0);
+
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_shear", 1);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_bulk", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("bulk_deltaf_kind", 1);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_diffusion", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("restrict_deltaf", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("deltaf_max_ratio", 1.0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("f0_is_not_small", 1);
+
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("calculate_vn", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("MC_sampling", 2);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+                                    "sample_upto_desired_particle_number", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->echo();
 #else
         log.info("Please compile the BEST afterburner with the iSS sampler");
         log.info("cmake .. -DiSS=ON");
@@ -241,45 +269,71 @@ SamplerAndSmash::SamplerAndSmash() {
 
 void AfterburnerModus::sampler_hadrons_to_smash_particles(
     smash::Particles &smash_particles) {
-  smash_particles.reset();
-  const auto &log = smash::logger<smash::LogArea::Experiment>();
+    smash_particles.reset();
+    const auto &log = smash::logger<smash::LogArea::Experiment>();
 
-  if (sampler_type_ == SamplerType::Microcanonical) {
-    const size_t n_patches = microcanonical_sampler_hadrons_->size();
-    for (size_t i_patch = 0; i_patch < n_patches; i_patch++) {
-      for (const MicrocanonicalSampler::SamplerParticle &h :
-           (*microcanonical_sampler_hadrons_)[i_patch]) {
-        const smash::FourVector p = h.momentum;
-        const double mass = p.abs();
-        const smash::FourVector r =
-            (*microcanonical_sampler_patches_)[i_patch].cells()[h.cell_index].r;
-        this->try_create_particle(smash_particles, h.type->pdgcode(),
-                                  r.x0(), r.x1(), r.x2(), r.x3(), mass,
-                                  p.x0(), p.x1(), p.x2(), p.x3());
-      }
-    }
-  } else if (sampler_type_ == SamplerType::MSU) {
-    log.info("Transfering ", msu_sampler_hadrons_->size(),
-             " particles from sampler to smash.");
-    for (const msu_sampler::Cpart &h : *msu_sampler_hadrons_) {
-      const smash::FourVector p(h.p[0], h.p[1], h.p[2], h.p[3]),
-                              r(h.r[0], h.r[1], h.r[2], h.r[3]);
-      const double mass = p.abs();
-      log.debug("pdg = ", h.pid, ", p = ", p, ", r = ", r);
-      this->try_create_particle(smash_particles,
-                                smash::PdgCode::from_decimal(h.pid),
-                                h.r[0], h.r[1], h.r[2], h.r[3], mass,
-                                h.p[0], h.p[1], h.p[2], h.p[3]);
-    }
-  } else if (sampler_type_ == SamplerType::iSS) {
+    if (sampler_type_ == SamplerType::Microcanonical) {
+        const size_t n_patches = microcanonical_sampler_hadrons_->size();
+        for (size_t i_patch = 0; i_patch < n_patches; i_patch++) {
+            for (const MicrocanonicalSampler::SamplerParticle &h :
+                 (*microcanonical_sampler_hadrons_)[i_patch]) {
+                const smash::FourVector p = h.momentum;
+                const double mass = p.abs();
+                const smash::FourVector r =
+                    (*microcanonical_sampler_patches_)[i_patch].cells()[h.cell_index].r;
+                this->try_create_particle(smash_particles, h.type->pdgcode(),
+                                          r.x0(), r.x1(), r.x2(), r.x3(), mass,
+                                          p.x0(), p.x1(), p.x2(), p.x3());
+            }
+        }
+    } else if (sampler_type_ == SamplerType::MSU) {
+        log.info("Transfering ", msu_sampler_hadrons_->size(),
+                 " particles from sampler to smash.");
+        for (const msu_sampler::Cpart &h : *msu_sampler_hadrons_) {
+            const smash::FourVector p(h.p[0], h.p[1], h.p[2], h.p[3]),
+                                    r(h.r[0], h.r[1], h.r[2], h.r[3]);
+            const double mass = p.abs();
+            log.debug("pdg = ", h.pid, ", p = ", p, ", r = ", r);
+            this->try_create_particle(smash_particles,
+                                      smash::PdgCode::from_decimal(h.pid),
+                                      h.r[0], h.r[1], h.r[2], h.r[3], mass,
+                                      h.p[0], h.p[1], h.p[2], h.p[3]);
+        }
+    } else if (sampler_type_ == SamplerType::iSS) {
 #ifdef iSSFlag
-        log.info("Initializing the iSS sampler");
+        log.info("Transfering ", iSS_hadrons_->size(),
+                 " particles from sampler to smash.");
+        for (const auto &ihadron : *iSS_hadrons_) {
+            log.debug("pdg = ", ihadron.pid, ", mass = ", ihadron.mass,
+                      " GeV, E = ", ihadron.E, " GeV");
+            this->try_create_particle(
+                smash_particles, smash::PdgCode::from_decimal(ihadron.pid),
+                ihadron.t, ihadron.x, ihadron.y, ihadron.x, ihadron.mass,
+                ihadron.E, ihadron.px, ihadron.py, ihadron.pz);
+        }
 #endif
-  }
+    }
 }
 
 void SamplerAndSmash::Execute() {
     const auto &log = smash::logger<smash::LogArea::Experiment>();
+
+    if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+        int status = iSpectraSampler_ptr_->read_in_FO_surface();
+        if (status != 0) {
+            log.warn(
+                "Some errors happened in reading in the hyper-surface");
+            exit(-1);
+        }
+        status = iSpectraSampler_ptr_->generate_samples();
+        if (status != 0) {
+            log.warn("Some errors happened in generating particle samples");
+            exit(-1);
+        }
+#endif
+    }
+
     for (size_t j = 0; j < N_samples_per_hydro_; j++) {
         AfterburnerModus *modus = smash_experiment_->modus();
 
@@ -300,20 +354,9 @@ void SamplerAndSmash::Execute() {
             modus->msu_sampler_hadrons_->resize(msu_sampler_->partlist->nparts);
         }
 
-
         if (sampler_type_ == SamplerType::iSS) {
 #ifdef iSSFlag
-            int status = iSpectraSampler_ptr_->read_in_FO_surface();
-            if (status != 0) {
-                log.warn(
-                    "Some errors happened in reading in the hyper-surface");
-                exit(-1);
-            }
-            status = iSpectraSampler_ptr_->generate_samples();
-            if (status != 0) {
-                log.warn("Some errors happened in generating particle samples");
-                exit(-1);
-            }
+            modus->iSS_hadrons_ = iSpectraSampler_ptr_->get_hadron_list_iev(j);
 #endif
         }
 
@@ -322,6 +365,10 @@ void SamplerAndSmash::Execute() {
         smash_experiment_->run_time_evolution();
         smash_experiment_->do_final_decays();
         smash_experiment_->final_output(j);
+
+        if (sampler_type_ == SamplerType::iSS) {
+            iSpectraSampler_ptr_->clear();
+        }
     }
 }
 
