@@ -12,7 +12,7 @@
 #include "msu_sampler/part.h"
 
 
-#ifdef iSS
+#ifdef iSSFlag
     #include "iSS.h"
 #endif
 
@@ -83,6 +83,11 @@ private:
   std::unique_ptr<msu_sampler::CmeanField_Simple> msu_sampler_meanfield_;
   std::unique_ptr<msu_sampler::CpartList> msu_sampler_particlelist_;
   std::unique_ptr<msu_sampler::CmasterSampler> msu_sampler_;
+
+  // iSS sampler
+#ifdef iSSFlag
+    std::unique_ptr<iSS> iSpectraSampler_ptr_;
+#endif
 
   std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
 };

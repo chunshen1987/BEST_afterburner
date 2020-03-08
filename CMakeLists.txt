@@ -37,7 +37,7 @@ if (iSS)
         ${SAMPLER_INCLUDES}
         ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/iSS
         ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/iSS/src)
-    set_target_properties (sampler_and_smash PROPERTIES COMPILE_FLAGS "-DiSS")
+    set_target_properties (sampler_and_smash PROPERTIES COMPILE_FLAGS "-DiSSFlag")
 endif (iSS)
 
 include_directories(${SAMPLER_INCLUDES})

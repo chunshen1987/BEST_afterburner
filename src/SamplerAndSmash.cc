@@ -52,7 +52,6 @@ void ensure_path_is_valid(const bf::path &path) {
 } // namespace
 
 SamplerAndSmash::SamplerAndSmash() {
-
   /**
    *   Set up configuration
    */
@@ -87,14 +86,17 @@ SamplerAndSmash::SamplerAndSmash() {
   std::string sampler_type_str = config.take({"General", "SamplerType"});
   N_samples_per_hydro_ = config.read({"General", "Nevents"});
 
-  if (sampler_type_str == "Microcanonical") {
-    sampler_type_ = SamplerType::Microcanonical;
-  } else if (sampler_type_str == "MSU") {
-    sampler_type_ = SamplerType::MSU;
-  } else {
-    log.error("Unknown sampler type: ", sampler_type_str);
-    throw std::runtime_error("Unknown sampler type.");
-  }
+    if (sampler_type_str == "Microcanonical") {
+        sampler_type_ = SamplerType::Microcanonical;
+    } else if (sampler_type_str == "MSU") {
+        sampler_type_ = SamplerType::MSU;
+    } else if (sampler_type_str == "iSS") {
+        sampler_type_ = SamplerType::iSS;
+    } else {
+        log.error("Unknown sampler type: ", sampler_type_str);
+        throw std::runtime_error("Unknown sampler type.");
+    }
+
   if (sampler_type_ == SamplerType::Microcanonical) {
     log.info("Initializing microcanonical sampler");
     sampler::ParticleListFormat plist_format =
@@ -188,6 +190,16 @@ SamplerAndSmash::SamplerAndSmash() {
     msu_sampler_->ReadHyper();
   }
 
+    if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+        log.info("Initializing the iSS sampler");
+#else
+        log.info("Please compile the BEST afterburner with the iSS sampler");
+        log.info("cmake .. -DiSS=ON");
+        exit(1);
+#endif
+    }
+
   /**
    *   Initialize SMASH Experiment
    */
@@ -250,40 +262,51 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
                                 h.r[0], h.r[1], h.r[2], h.r[3], mass,
                                 h.p[0], h.p[1], h.p[2], h.p[3]);
     }
+  } else if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+        log.info("Initializing the iSS sampler");
+#endif
   }
 }
 
 void SamplerAndSmash::Execute() {
-  const auto &log = smash::logger<smash::LogArea::Experiment>();
-  for (size_t j = 0; j < N_samples_per_hydro_; j++) {
-    AfterburnerModus *modus = smash_experiment_->modus();
+    const auto &log = smash::logger<smash::LogArea::Experiment>();
+    for (size_t j = 0; j < N_samples_per_hydro_; j++) {
+        AfterburnerModus *modus = smash_experiment_->modus();
 
-    if (sampler_type_ == SamplerType::Microcanonical) {
-      step_until_sufficient_decorrelation(
-          *microcanonical_sampler_, *microcanonical_sampler_patches_,
-          *microcanonical_sampler_particles_, N_decorrelate_);
-      modus->microcanonical_sampler_hadrons_ =
-          microcanonical_sampler_particles_.get();
-      modus->microcanonical_sampler_patches_ =
-          microcanonical_sampler_patches_.get();
+        if (sampler_type_ == SamplerType::Microcanonical) {
+            step_until_sufficient_decorrelation(
+                *microcanonical_sampler_, *microcanonical_sampler_patches_,
+                *microcanonical_sampler_particles_, N_decorrelate_);
+            modus->microcanonical_sampler_hadrons_ =
+                microcanonical_sampler_particles_.get();
+            modus->microcanonical_sampler_patches_ =
+                microcanonical_sampler_patches_.get();
+        }
+
+        if (sampler_type_ == SamplerType::MSU) {
+            msu_sampler_->MakeEvent();
+            modus->msu_sampler_hadrons_ = &(msu_sampler_->partlist->partvec);
+            // Fix a bug/feature of the wrong vector size in MSU sampler
+            modus->msu_sampler_hadrons_->resize(msu_sampler_->partlist->nparts);
+        }
+
+
+        if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+            log.info("Initializing the iSS sampler");
+#endif
+        }
+
+        log.info("Event ", j);
+        smash_experiment_->initialize_new_event();
+        smash_experiment_->run_time_evolution();
+        smash_experiment_->do_final_decays();
+        smash_experiment_->final_output(j);
     }
-
-    if (sampler_type_ == SamplerType::MSU) {
-      msu_sampler_->MakeEvent();
-      modus->msu_sampler_hadrons_ = &(msu_sampler_->partlist->partvec);
-      // Fix a bug/feature of the wrong vector size in MSU sampler
-      modus->msu_sampler_hadrons_->resize(msu_sampler_->partlist->nparts);
-    }
-
-    log.info("Event ", j);
-    smash_experiment_->initialize_new_event();
-    smash_experiment_->run_time_evolution();
-    smash_experiment_->do_final_decays();
-    smash_experiment_->final_output(j);
-  }
 }
 
 int main() {
-  SamplerAndSmash sampler_and_smash;
-  sampler_and_smash.Execute();
+    SamplerAndSmash sampler_and_smash;
+    sampler_and_smash.Execute();
 }
