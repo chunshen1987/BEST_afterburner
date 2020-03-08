@@ -11,6 +11,11 @@
 #include "msu_sampler/master.h"
 #include "msu_sampler/part.h"
 
+
+#ifdef iSS
+    #include "iSS.h"
+#endif
+
 enum class SamplerType {
   Microcanonical,
   MSU,
