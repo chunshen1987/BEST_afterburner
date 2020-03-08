@@ -366,10 +366,12 @@ void SamplerAndSmash::Execute() {
         smash_experiment_->run_time_evolution();
         smash_experiment_->do_final_decays();
         smash_experiment_->final_output(j);
+    }
 
-        if (sampler_type_ == SamplerType::iSS) {
-            iSpectraSampler_ptr_->clear();
-        }
+    if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+        iSpectraSampler_ptr_->clear();
+#endif
     }
 }
 

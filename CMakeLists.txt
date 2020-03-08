@@ -26,7 +26,7 @@ if(${SMASH_FOUND})
     target_link_libraries(sampler_and_smash ${SMASH_LIBRARIES})
 endif(${SMASH_FOUND})
 
-option(iSS "Build tests for iSS" ON)
+option(iSS "Build tests for iSS" OFF)
 
 set(SAMPLER_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye/include
