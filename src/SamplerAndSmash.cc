@@ -193,6 +193,15 @@ SamplerAndSmash::SamplerAndSmash() {
     if (sampler_type_ == SamplerType::iSS) {
 #ifdef iSSFlag
         log.info("Initializing the iSS sampler");
+        smash::Configuration iSS_config = config["iSS"];
+        for (const std::string key : iSS_config.list_upmost_nodes()) {
+            std::string value = iSS_config.take({key.c_str()});
+            log.info("iSS: using option ", key, " = ", value);
+        }
+        std::string input_file = iSS_config.take({"iSS_INPUTFILE"});
+        std::string work_path  = iSS_config.take({"WORKING_PATH"});
+        iSpectraSampler_ptr_ = std::unique_ptr<iSS> (new iSS(work_path));
+        iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
 #else
         log.info("Please compile the BEST afterburner with the iSS sampler");
         log.info("cmake .. -DiSS=ON");
@@ -294,7 +303,17 @@ void SamplerAndSmash::Execute() {
 
         if (sampler_type_ == SamplerType::iSS) {
 #ifdef iSSFlag
-            log.info("Initializing the iSS sampler");
+            int status = iSpectraSampler_ptr_->read_in_FO_surface();
+            if (status != 0) {
+                log.warn(
+                    "Some errors happened in reading in the hyper-surface");
+                exit(-1);
+            }
+            status = iSpectraSampler_ptr_->generate_samples();
+            if (status != 0) {
+                log.warn("Some errors happened in generating particle samples");
+                exit(-1);
+            }
 #endif
         }
 

@@ -6,7 +6,7 @@ General:
     End_Time:       200.0
     Randomseed:     -1
     Nevents:        1       # Number of (sampler + smash) events
-    SamplerType:    MSU   # options so far: Microcanonical, MSU
+    SamplerType:    MSU     # options so far: Microcanonical, MSU, iSS
 
 Output_Directory:  smash_output_wo_spectral
 Output:
@@ -37,3 +37,7 @@ MSUSampler:
     SAMPLER_BOSE_CORR: true
     SAMPLER_N_BOSE_CORR: 5
     SAMPLER_USE_POLE_MASS: false
+
+iSS:
+    iSS_INPUTFILE: "../external_codes/iSS/iSS_parameters.dat"
+    WORKING_PATH: "./"
