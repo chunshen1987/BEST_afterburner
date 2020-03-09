@@ -206,6 +206,10 @@ SamplerAndSmash::SamplerAndSmash() {
         std::string work_path  = iSS_config.take({"WORKING_PATH"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal(
                         "number_of_repeated_sampling", N_samples_per_hydro_);
+        int random_seed = config.read({"General", "Randomseed"});
+        iSpectraSampler_ptr_->set_random_seed(random_seed);
+        int hydro_mode = iSS_config.take({"HYDRO_MODE"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
 
         // set default parameters
         iSpectraSampler_ptr_ = std::unique_ptr<iSS> (new iSS(work_path));
@@ -217,17 +221,17 @@ SamplerAndSmash::SamplerAndSmash() {
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("store_samples_in_memory", 1);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("perform_decays", 0);
 
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_shear", 1);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_bulk", 0);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_rhob", 0);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("turn_on_diff", 0);
-
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_shear", 1);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_bulk", 0);
+        int bulk_deltaf = iSS_config.take({"INCLUDE_DELTAF_BULK"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_bulk",
+                                                  bulk_deltaf);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("bulk_deltaf_kind", 1);
+        int diff_deltaf = iSS_config.take({"INCLUDE_DELTAF_DIFF"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_diffusion",
-                                                  0);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("restrict_deltaf", 0);
+                                                  diff_deltaf);
+        int restrict_df = iSS_config.take({"RESTRICT_DELTAF"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("restrict_deltaf",
+                                                  restrict_df);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("deltaf_max_ratio", 1.0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("f0_is_not_small", 1);
 

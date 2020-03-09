@@ -41,3 +41,9 @@ MSUSampler:
 iSS:
     iSS_INPUTFILE: "../external_codes/iSS/iSS_parameters.dat"
     WORKING_PATH: "./"
+    HYDRO_MODE: 2
+    INCLUDE_DELTAF_SHEAR: 1
+    INCLUDE_DELTAF_BULK:  0
+    INCLUDE_DELTAF_DIFF:  0
+    RESTRICT_DELTAF: 0
+
