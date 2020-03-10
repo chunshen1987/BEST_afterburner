@@ -199,21 +199,21 @@ SamplerAndSmash::SamplerAndSmash() {
         log.info("Initializing the iSS sampler");
         smash::Configuration iSS_config = config["iSS"];
         for (const std::string key : iSS_config.list_upmost_nodes()) {
-            std::string value = iSS_config.take({key.c_str()});
+            std::string value = iSS_config.read({key.c_str()});
             log.info("iSS: using option ", key, " = ", value);
         }
-        std::string input_file = iSS_config.take({"iSS_INPUTFILE"});
-        std::string work_path  = iSS_config.take({"WORKING_PATH"});
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
-                        "number_of_repeated_sampling", N_samples_per_hydro_);
-        int random_seed = config.read({"General", "Randomseed"});
-        iSpectraSampler_ptr_->set_random_seed(random_seed);
-        int hydro_mode = iSS_config.take({"HYDRO_MODE"});
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
-
+        std::string input_file = iSS_config.read({"iSS_INPUTFILE"});
+        std::string work_path  = iSS_config.read({"WORKING_PATH"});
         // set default parameters
         iSpectraSampler_ptr_ = std::unique_ptr<iSS> (new iSS(work_path));
         iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
+
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+                        "number_of_repeated_sampling", N_samples_per_hydro_);
+        int64_t random_seed = config.read({"General", "Randomseed"});
+        iSpectraSampler_ptr_->set_random_seed(random_seed);
+        int hydro_mode = iSS_config.read({"HYDRO_MODE"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal(
                                             "output_samples_into_files", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_OSCAR_format", 0);
@@ -222,14 +222,14 @@ SamplerAndSmash::SamplerAndSmash() {
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("perform_decays", 0);
 
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_shear", 1);
-        int bulk_deltaf = iSS_config.take({"INCLUDE_DELTAF_BULK"});
+        int bulk_deltaf = iSS_config.read({"INCLUDE_DELTAF_BULK"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_bulk",
                                                   bulk_deltaf);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("bulk_deltaf_kind", 1);
-        int diff_deltaf = iSS_config.take({"INCLUDE_DELTAF_DIFF"});
+        int diff_deltaf = iSS_config.read({"INCLUDE_DELTAF_DIFF"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_diffusion",
                                                   diff_deltaf);
-        int restrict_df = iSS_config.take({"RESTRICT_DELTAF"});
+        int restrict_df = iSS_config.read({"RESTRICT_DELTAF"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("restrict_deltaf",
                                                   restrict_df);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("deltaf_max_ratio", 1.0);
@@ -335,17 +335,7 @@ void SamplerAndSmash::Execute() {
     if (sampler_type_ == SamplerType::iSS) {
         // The iSS sample all events at once
 #ifdef iSSFlag
-        int status = iSpectraSampler_ptr_->read_in_FO_surface();
-        if (status != 0) {
-            log.warn(
-                "Some errors happened in reading in the hyper-surface");
-            exit(-1);
-        }
-        status = iSpectraSampler_ptr_->generate_samples();
-        if (status != 0) {
-            log.warn("Some errors happened in generating particle samples");
-            exit(-1);
-        }
+        iSpectraSampler_ptr_->shell();
 #endif
     }
 

@@ -5,8 +5,8 @@ General:
     Modus:          Afterburner
     End_Time:       200.0
     Randomseed:     -1
-    Nevents:        1       # Number of (sampler + smash) events
-    SamplerType:    MSU     # options so far: Microcanonical, MSU, iSS
+    Nevents:        10      # Number of (sampler + smash) events
+    SamplerType:    iSS     # options so far: Microcanonical, MSU, iSS
 
 Output_Directory:  smash_output_wo_spectral
 Output:
@@ -40,7 +40,7 @@ MSUSampler:
 
 iSS:
     iSS_INPUTFILE: "../external_codes/iSS/iSS_parameters.dat"
-    WORKING_PATH: "./"
+    WORKING_PATH: "./results"
     HYDRO_MODE: 2
     INCLUDE_DELTAF_SHEAR: 1
     INCLUDE_DELTAF_BULK:  0
