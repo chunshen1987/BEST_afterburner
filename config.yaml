@@ -12,7 +12,8 @@ Output_Directory:  smash_output_wo_spectral
 Output:
     Output_Interval: 10.0
     Particles:
-        Format:          ["Oscar2013"]
+        Format:     ["Oscar2013"]
+        Extended:   True
 
 # Both SMASH and microcanonical sampler are set up from these
 Particles:   "../external_codes/smash/input/particles.txt"
