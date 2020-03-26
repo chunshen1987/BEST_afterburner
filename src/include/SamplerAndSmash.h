@@ -99,4 +99,4 @@ class SamplerAndSmash {
     std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
 };
 
-#endif // SAMPLER_AND_SMASH_H
+#endif  // SAMPLER_AND_SMASH_H

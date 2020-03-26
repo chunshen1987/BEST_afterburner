@@ -41,16 +41,16 @@ void ensure_path_is_valid(const bf::path &path) {
         }
     } else {
         if (!bf::create_directories(path)) {
-        throw std::runtime_error(
-            "Race condition detected: The directory " + path.native() +
-            " did not exist a few cycles ago, but was created in the meantime by "
-            "a different process.");
+            throw std::runtime_error("Race condition detected: The directory " +
+                                     path.native() +
+                                     " did not exist a few cycles ago, but was "
+                                     "created in the meantime by "
+                                     "a different process.");
         }
     }
 }
 
-} // namespace
-
+}  // namespace
 
 SamplerAndSmash::SamplerAndSmash() {
     /**
@@ -98,6 +98,8 @@ SamplerAndSmash::SamplerAndSmash() {
         log.error("Unknown sampler type: ", sampler_type_str);
         throw std::runtime_error("Unknown sampler type.");
     }
+    std::string smash_particlelist_filename = config.take({"Particles"});
+    std::string smash_decaymodes_filename = config.take({"DecayModes"});
 
     if (sampler_type_ == SamplerType::Microcanonical) {
         log.info("Initializing microcanonical sampler");
@@ -348,6 +350,7 @@ void SamplerAndSmash::Execute() {
         }
 #endif
     }
+}
 
     for (size_t j = 0; j < N_samples_per_hydro_; j++) {
         // event loop: pass events one by one from the sampler to SMASH

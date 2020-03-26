@@ -1,0 +1,31 @@
+# Code formatting
+
+To make code uniform and avoid differences between new commits caused by purely formatting changes
+we enforce using clang-format over every new commit. Different clang-format versions may format
+code slightly differently, so fixed version 6.0 should be used.
+
+### To get clang-format 6.0:
+  1) Go to http://releases.llvm.org/download.html
+  2) Scroll down to "Download LLVM 6.0.0"
+  3) Download a pre-built binary for your system
+
+     To find out what system you have, on unix systems ou can run
+
+      lsb_release -a
+
+  4) Untar the archive, for example
+
+      tar -xf clang+llvm-6.0.0-x86_64-linux-sles12.2.tar.xz
+
+  5) Copy clang-format to your local ~/bin folder:
+
+      mkdir ~/bin
+      cp clang+llvm-6.0.0-x86_64-linux-sles12.2/bin/clang-format ~/bin
+      echo 'export PATH=$PATH:~/bin' >> ~/.bashrc
+      source ~/.bashrc
+
+      rm -r clang+llvm-6.0.0-x86_64-linux-sles12.2*
+
+### To format the code:
+
+  clang-format -i src/*.cc src/include/*.h
