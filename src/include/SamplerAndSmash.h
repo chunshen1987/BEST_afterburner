@@ -12,10 +12,10 @@
 #include "msu_sampler/part.h"
 
 enum class SamplerType {
-  Microcanonical,
-  MSU,
-  Sangwook,
-  iSS,
+    Microcanonical,
+    MSU,
+    Sangwook,
+    iSS,
 };
 
 /**
@@ -24,62 +24,59 @@ enum class SamplerType {
  * This class is needed to use SMASH as a 3rd party afterburner.
  */
 class AfterburnerModus : public smash::ListModus {
-public:
-  // Unlike for ListModus there is no need to get any data from the config
-  AfterburnerModus(smash::Configuration, const smash::ExperimentParameters &) {
-    const auto &log = smash::logger<smash::LogArea::Main>();
-    log.info("Constructing AfterburnerModus");
-  }
-  void set_sampler_type(SamplerType sampler_type) {
-    sampler_type_ = sampler_type;
-  }
+   public:
+    // Unlike for ListModus there is no need to get any data from the config
+    AfterburnerModus(smash::Configuration, const smash::ExperimentParameters &) {
+        const auto &log = smash::logger<smash::LogArea::Main>();
+        log.info("Constructing AfterburnerModus");
+    }
+    void set_sampler_type(SamplerType sampler_type) { sampler_type_ = sampler_type; }
 
-  void sampler_hadrons_to_smash_particles(smash::Particles &smash_particles);
+    void sampler_hadrons_to_smash_particles(smash::Particles &smash_particles);
 
-  // This function overrides the function from ListModus.
-  double initial_conditions(smash::Particles *particles,
-                            const smash::ExperimentParameters &) {
-    sampler_hadrons_to_smash_particles(*particles);
-    backpropagate_to_same_time(*particles);
-    return start_time_;
-  }
+    // This function overrides the function from ListModus.
+    double initial_conditions(smash::Particles *particles,
+                              const smash::ExperimentParameters &) {
+        sampler_hadrons_to_smash_particles(*particles);
+        backpropagate_to_same_time(*particles);
+        return start_time_;
+    }
 
-  // Microcanonical sampler hook-up
-  std::vector<MicrocanonicalSampler::SamplerParticleList>
-      *microcanonical_sampler_hadrons_;
-  std::vector<HyperSurfacePatch> *microcanonical_sampler_patches_;
+    // Microcanonical sampler hook-up
+    std::vector<MicrocanonicalSampler::SamplerParticleList>
+        *microcanonical_sampler_hadrons_;
+    std::vector<HyperSurfacePatch> *microcanonical_sampler_patches_;
 
-  // MSU sampler hook-up
-  std::vector<msu_sampler::Cpart> *msu_sampler_hadrons_;
+    // MSU sampler hook-up
+    std::vector<msu_sampler::Cpart> *msu_sampler_hadrons_;
 
-private:
-  SamplerType sampler_type_;
+   private:
+    SamplerType sampler_type_;
 };
 
 class SamplerAndSmash {
-public:
-  SamplerAndSmash();
-  void Execute();
+   public:
+    SamplerAndSmash();
+    void Execute();
 
-private:
-  SamplerType sampler_type_;
+   private:
+    SamplerType sampler_type_;
 
-  // Microcanonical sampler
-  std::unique_ptr<std::vector<HyperSurfacePatch>>
-      microcanonical_sampler_patches_;
-  std::unique_ptr<std::vector<MicrocanonicalSampler::SamplerParticleList>>
-      microcanonical_sampler_particles_;
-  std::unique_ptr<MicrocanonicalSampler> microcanonical_sampler_;
-  size_t N_decorrelate_;
-  size_t N_samples_per_hydro_;
+    // Microcanonical sampler
+    std::unique_ptr<std::vector<HyperSurfacePatch>> microcanonical_sampler_patches_;
+    std::unique_ptr<std::vector<MicrocanonicalSampler::SamplerParticleList>>
+        microcanonical_sampler_particles_;
+    std::unique_ptr<MicrocanonicalSampler> microcanonical_sampler_;
+    size_t N_decorrelate_;
+    size_t N_samples_per_hydro_;
 
-  // MSU sampler
-  msu_sampler::CparameterMap msu_sampler_parameters_;
-  std::unique_ptr<msu_sampler::CmeanField_Simple> msu_sampler_meanfield_;
-  std::unique_ptr<msu_sampler::CpartList> msu_sampler_particlelist_;
-  std::unique_ptr<msu_sampler::CmasterSampler> msu_sampler_;
+    // MSU sampler
+    msu_sampler::CparameterMap msu_sampler_parameters_;
+    std::unique_ptr<msu_sampler::CmeanField_Simple> msu_sampler_meanfield_;
+    std::unique_ptr<msu_sampler::CpartList> msu_sampler_particlelist_;
+    std::unique_ptr<msu_sampler::CmasterSampler> msu_sampler_;
 
-  std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
+    std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
 };
 
-#endif // SAMPLER_AND_SMASH_H
+#endif  // SAMPLER_AND_SMASH_H
