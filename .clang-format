@@ -73,7 +73,8 @@ Cpp11BracedListStyle: true
 ##    If true, indent when breaking function declarations which are not also definitions after the type.
 ##IndentFunctionDeclarationAfterType (bool)
 #
-##    The number of characters to use for indentation.
+
+#    The number of characters to use for indentation.
 IndentWidth: 4
 
 ##    The maximum number of consecutive empty lines to keep.
