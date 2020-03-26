@@ -77,9 +77,6 @@ SamplerAndSmash::SamplerAndSmash() {
     if (seed < 0) {
         config["General"]["Randomseed"] = smash::random::generate_63bit_seed();
     }
-    std::string smash_particlelist_filename = config.take({"Particles"});
-    std::string smash_decaymodes_filename = config.take({"DecayModes"});
-
     /**
      *   Initialize sampler
      */
@@ -339,47 +336,46 @@ void SamplerAndSmash::Execute() {
         }
 #endif
     }
-}
 
-for (size_t j = 0; j < N_samples_per_hydro_; j++) {
-    // event loop: pass events one by one from the sampler to SMASH
-    AfterburnerModus *modus = smash_experiment_->modus();
+    for (size_t j = 0; j < N_samples_per_hydro_; j++) {
+        // event loop: pass events one by one from the sampler to SMASH
+        AfterburnerModus *modus = smash_experiment_->modus();
 
-    if (sampler_type_ == SamplerType::Microcanonical) {
-        step_until_sufficient_decorrelation(
-            *microcanonical_sampler_, *microcanonical_sampler_patches_,
-            *microcanonical_sampler_particles_, N_decorrelate_);
-        modus->microcanonical_sampler_hadrons_ =
-            microcanonical_sampler_particles_.get();
-        modus->microcanonical_sampler_patches_ =
-            microcanonical_sampler_patches_.get();
-    }
+        if (sampler_type_ == SamplerType::Microcanonical) {
+            step_until_sufficient_decorrelation(
+                *microcanonical_sampler_, *microcanonical_sampler_patches_,
+                *microcanonical_sampler_particles_, N_decorrelate_);
+            modus->microcanonical_sampler_hadrons_ =
+                microcanonical_sampler_particles_.get();
+            modus->microcanonical_sampler_patches_ =
+                microcanonical_sampler_patches_.get();
+        }
 
-    if (sampler_type_ == SamplerType::MSU) {
-        msu_sampler_->MakeEvent();
-        modus->msu_sampler_hadrons_ = &(msu_sampler_->partlist->partvec);
-        // Fix a bug/feature of the wrong vector size in MSU sampler
-        modus->msu_sampler_hadrons_->resize(msu_sampler_->partlist->nparts);
+        if (sampler_type_ == SamplerType::MSU) {
+            msu_sampler_->MakeEvent();
+            modus->msu_sampler_hadrons_ = &(msu_sampler_->partlist->partvec);
+            // Fix a bug/feature of the wrong vector size in MSU sampler
+            modus->msu_sampler_hadrons_->resize(msu_sampler_->partlist->nparts);
+        }
+
+        if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+            modus->iSS_hadrons_ = iSpectraSampler_ptr_->get_hadron_list_iev(j);
+#endif
+        }
+
+        log.info("Event ", j);
+        smash_experiment_->initialize_new_event();
+        smash_experiment_->run_time_evolution();
+        smash_experiment_->do_final_decays();
+        smash_experiment_->final_output(j);
     }
 
     if (sampler_type_ == SamplerType::iSS) {
 #ifdef iSSFlag
-        modus->iSS_hadrons_ = iSpectraSampler_ptr_->get_hadron_list_iev(j);
+        iSpectraSampler_ptr_->clear();
 #endif
     }
-
-    log.info("Event ", j);
-    smash_experiment_->initialize_new_event();
-    smash_experiment_->run_time_evolution();
-    smash_experiment_->do_final_decays();
-    smash_experiment_->final_output(j);
-}
-
-if (sampler_type_ == SamplerType::iSS) {
-#ifdef iSSFlag
-    iSpectraSampler_ptr_->clear();
-#endif
-}
 }
 
 int main() {
