@@ -8,10 +8,15 @@ case "${machine}" in
 esac
 number_of_cores_to_compile=$(( ${number_of_cores} > 10 ? 10 : ${number_of_cores} ))
 
+(
+    cd external_codes
+    ./get_iSS.sh
+)
+
 mkdir -p build
 (
     cd build
     rm -fr *
-    cmake .. -DPythia_CONFIG_EXECUTABLE=${PYTHIA8DIR}/bin/pythia8-config
+    cmake .. -DPythia_CONFIG_EXECUTABLE=${PYTHIA8DIR}/bin/pythia8-config -DiSS=ON
     make -j${number_of_cores}
 )
