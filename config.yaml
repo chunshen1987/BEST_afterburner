@@ -5,14 +5,15 @@ General:
     Modus:          Afterburner
     End_Time:       200.0
     Randomseed:     -1
-    Nevents:        1       # Number of (sampler + smash) events
-    SamplerType:    MSU   # options so far: Microcanonical, MSU
+    Nevents:        10      # Number of (sampler + smash) events
+    SamplerType:    iSS     # options so far: Microcanonical, MSU, iSS
 
 Output_Directory:  smash_output_wo_spectral
 Output:
     Output_Interval: 10.0
     Particles:
-        Format:          ["Oscar2013"]
+        Format:     ["Oscar2013"]
+        Extended:   True
 
 # Both SMASH and microcanonical sampler are set up from these
 Particles:   "../external_codes/smash/input/particles.txt"
@@ -37,3 +38,13 @@ MSUSampler:
     SAMPLER_BOSE_CORR: true
     SAMPLER_N_BOSE_CORR: 5
     SAMPLER_USE_POLE_MASS: false
+
+iSS:
+    iSS_INPUTFILE: "../external_codes/iSS/iSS_parameters.dat"
+    WORKING_PATH: "./results"
+    HYDRO_MODE: 2
+    INCLUDE_DELTAF_SHEAR: 1
+    INCLUDE_DELTAF_BULK:  0
+    INCLUDE_DELTAF_DIFF:  0
+    RESTRICT_DELTAF: 0
+

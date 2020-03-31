@@ -11,6 +11,10 @@
 #include "msu_sampler/master.h"
 #include "msu_sampler/part.h"
 
+#ifdef iSSFlag
+#include "iSS.h"
+#endif
+
 enum class SamplerType {
     Microcanonical,
     MSU,
@@ -28,8 +32,9 @@ class AfterburnerModus : public smash::ListModus {
     // Unlike for ListModus there is no need to get any data from the config
     AfterburnerModus(smash::Configuration, const smash::ExperimentParameters &) {
         const auto &log = smash::logger<smash::LogArea::Main>();
-        log.info("Constructing AfterburnerModus");
+        log.debug("Constructing AfterburnerModus");
     }
+
     void set_sampler_type(SamplerType sampler_type) { sampler_type_ = sampler_type; }
 
     void sampler_hadrons_to_smash_particles(smash::Particles &smash_particles);
@@ -49,6 +54,11 @@ class AfterburnerModus : public smash::ListModus {
 
     // MSU sampler hook-up
     std::vector<msu_sampler::Cpart> *msu_sampler_hadrons_;
+
+    // iSS sampler hook-up
+#ifdef iSSFlag
+    std::vector<iSS_Hadron> *iSS_hadrons_;
+#endif
 
    private:
     SamplerType sampler_type_;
@@ -76,6 +86,12 @@ class SamplerAndSmash {
     std::unique_ptr<msu_sampler::CpartList> msu_sampler_particlelist_;
     std::unique_ptr<msu_sampler::CmasterSampler> msu_sampler_;
 
+    // iSS sampler
+#ifdef iSSFlag
+    std::unique_ptr<iSS> iSpectraSampler_ptr_;
+#endif
+
+    // SMASH
     std::unique_ptr<smash::Experiment<AfterburnerModus>> smash_experiment_;
 };
 

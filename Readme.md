@@ -37,6 +37,10 @@ If compilation went wrong, take a look at the cmake messages. Likely gsl, boost 
     make
 ```
 
+The commands above are compiled in a bash script `compile.sh`. One can run this script to build the wrapper package.
+
+If one wants to run the iSS code package to sample particles and feed into SMASH, one can run the provided bash script, `./compile_with_iSS.sh`.
+
 * Configuring and running
 
 The configuration for ALL codes (SMASH, and all samplers) is in the config.yaml file.

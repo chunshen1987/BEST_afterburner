@@ -77,9 +77,6 @@ SamplerAndSmash::SamplerAndSmash() {
     if (seed < 0) {
         config["General"]["Randomseed"] = smash::random::generate_63bit_seed();
     }
-    std::string smash_particlelist_filename = config.take({"Particles"});
-    std::string smash_decaymodes_filename = config.take({"DecayModes"});
-
     /**
      *   Initialize sampler
      */
@@ -90,10 +87,15 @@ SamplerAndSmash::SamplerAndSmash() {
         sampler_type_ = SamplerType::Microcanonical;
     } else if (sampler_type_str == "MSU") {
         sampler_type_ = SamplerType::MSU;
+    } else if (sampler_type_str == "iSS") {
+        sampler_type_ = SamplerType::iSS;
     } else {
         log.error("Unknown sampler type: ", sampler_type_str);
         throw std::runtime_error("Unknown sampler type.");
     }
+    std::string smash_particlelist_filename = config.take({"Particles"});
+    std::string smash_decaymodes_filename = config.take({"DecayModes"});
+
     if (sampler_type_ == SamplerType::Microcanonical) {
         log.info("Initializing microcanonical sampler");
         sampler::ParticleListFormat plist_format =
@@ -172,10 +174,10 @@ SamplerAndSmash::SamplerAndSmash() {
 
         log.info("MSU sampler: creating particle list");
         msu_sampler_particlelist_ =
-            smash::make_unique<msu_sampler::CpartList>(&msu_sampler_parameters_);
+            (smash::make_unique<msu_sampler::CpartList>(&msu_sampler_parameters_));
         log.info("MSU sampler: creating mean field");
-        msu_sampler_meanfield_ = smash::make_unique<msu_sampler::CmeanField_Simple>(
-            &msu_sampler_parameters_);
+        msu_sampler_meanfield_ = (smash::make_unique<msu_sampler::CmeanField_Simple>(
+            &msu_sampler_parameters_));
         log.info("MSU sampler: creating sampler object");
 
         msu_sampler_ = smash::make_unique<msu_sampler::CmasterSampler>(
@@ -184,6 +186,58 @@ SamplerAndSmash::SamplerAndSmash() {
         msu_sampler_->partlist = msu_sampler_particlelist_.get();
         msu_sampler_->randy->reset(time(NULL));
         msu_sampler_->ReadHyper();
+    }
+
+    if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+        log.info("Initializing the iSS sampler");
+        smash::Configuration iSS_config = config["iSS"];
+        for (const std::string key : iSS_config.list_upmost_nodes()) {
+            std::string value = iSS_config.read({key.c_str()});
+            log.info("iSS: using option ", key, " = ", value);
+        }
+        std::string input_file = iSS_config.read({"iSS_INPUTFILE"});
+        std::string work_path  = iSS_config.read({"WORKING_PATH"});
+        // set default parameters
+        iSpectraSampler_ptr_ = std::unique_ptr<iSS> (new iSS(work_path));
+        iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
+
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+                        "number_of_repeated_sampling", N_samples_per_hydro_);
+        int64_t random_seed = config.read({"General", "Randomseed"});
+        iSpectraSampler_ptr_->set_random_seed(random_seed);
+        int hydro_mode = iSS_config.read({"HYDRO_MODE"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+                                            "output_samples_into_files", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_OSCAR_format", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_gzip_format", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("store_samples_in_memory", 1);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("perform_decays", 0);
+
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_shear", 1);
+        int bulk_deltaf = iSS_config.read({"INCLUDE_DELTAF_BULK"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_bulk",
+                                                  bulk_deltaf);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("bulk_deltaf_kind", 1);
+        int diff_deltaf = iSS_config.read({"INCLUDE_DELTAF_DIFF"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_diffusion",
+                                                  diff_deltaf);
+        int restrict_df = iSS_config.take({"RESTRICT_DELTAF"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("restrict_deltaf", restrict_df);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("deltaf_max_ratio", 1.0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("f0_is_not_small", 1);
+
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("calculate_vn", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("MC_sampling", 2);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
+            "sample_upto_desired_particle_number", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->echo();
+#else
+        log.info("Please compile the BEST afterburner with the iSS sampler");
+        log.info("cmake .. -DiSS=ON");
+        exit(1);
+#endif
     }
 
     /**
@@ -204,8 +258,8 @@ SamplerAndSmash::SamplerAndSmash() {
     bf::path output_path = default_output_path(output_dir);
     ensure_path_is_valid(output_path);
 
-    smash_experiment_ =
-        smash::make_unique<smash::Experiment<AfterburnerModus>>(config, output_path);
+    smash_experiment_ = (smash::make_unique<smash::Experiment<AfterburnerModus>>(
+        config, output_path));
     smash_experiment_->modus()->set_sampler_type(sampler_type_);
     log.info("Finish initializing SMASH");
 
@@ -229,9 +283,9 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
                 const smash::FourVector p = h.momentum;
                 const double mass = p.abs();
                 const smash::FourVector r =
-                    (*microcanonical_sampler_patches_)[i_patch]
-                        .cells()[h.cell_index]
-                        .r;
+                    ((*microcanonical_sampler_patches_)[i_patch]
+                         .cells()[h.cell_index]
+                         .r);
                 this->try_create_particle(smash_particles, h.type->pdgcode(), r.x0(),
                                           r.x1(), r.x2(), r.x3(), mass, p.x0(),
                                           p.x1(), p.x2(), p.x3());
@@ -249,12 +303,34 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
                 smash_particles, smash::PdgCode::from_decimal(h.pid), h.r[0], h.r[1],
                 h.r[2], h.r[3], mass, h.p[0], h.p[1], h.p[2], h.p[3]);
         }
+    } else if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+        log.info("Transfering ", iSS_hadrons_->size(),
+                 " particles from sampler to smash.");
+        for (const auto &ihadron : *iSS_hadrons_) {
+            log.debug("pdg = ", ihadron.pid, ", mass = ", ihadron.mass,
+                      " GeV, E = ", ihadron.E, " GeV");
+            this->try_create_particle(
+                smash_particles, smash::PdgCode::from_decimal(ihadron.pid),
+                ihadron.t, ihadron.x, ihadron.y, ihadron.x, ihadron.mass, ihadron.E,
+                ihadron.px, ihadron.py, ihadron.pz);
+        }
+#endif
     }
 }
 
 void SamplerAndSmash::Execute() {
     const auto &log = smash::logger<smash::LogArea::Experiment>();
+
+    if (sampler_type_ == SamplerType::iSS) {
+        // The iSS sample all events at once
+#ifdef iSSFlag
+        iSpectraSampler_ptr_->shell();
+#endif
+    }
+
     for (size_t j = 0; j < N_samples_per_hydro_; j++) {
+        // event loop: pass events one by one from the sampler to SMASH
         AfterburnerModus *modus = smash_experiment_->modus();
 
         if (sampler_type_ == SamplerType::Microcanonical) {
@@ -274,11 +350,23 @@ void SamplerAndSmash::Execute() {
             modus->msu_sampler_hadrons_->resize(msu_sampler_->partlist->nparts);
         }
 
+        if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+            modus->iSS_hadrons_ = iSpectraSampler_ptr_->get_hadron_list_iev(j);
+#endif
+        }
+
         log.info("Event ", j);
         smash_experiment_->initialize_new_event();
         smash_experiment_->run_time_evolution();
         smash_experiment_->do_final_decays();
         smash_experiment_->final_output(j);
+    }
+
+    if (sampler_type_ == SamplerType::iSS) {
+#ifdef iSSFlag
+        iSpectraSampler_ptr_->clear();
+#endif
     }
 }
 
