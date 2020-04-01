@@ -197,10 +197,11 @@ SamplerAndSmash::SamplerAndSmash() {
             log.info("iSS: using option ", key, " = ", value);
         }
         std::string input_file = iSS_config.take({"iSS_INPUTFILE"});
+        std::string table_path = iSS_config.take({"iSS_TABLESPATH"});
         std::string work_path = iSS_config.take({"WORKING_PATH"});
         // set default parameters
-        iSpectraSampler_ptr_ = smash::make_unique<iSS>(work_path);
-        iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
+        iSpectraSampler_ptr_ =
+            smash::make_unique<iSS>(work_path, table_path, input_file);
 
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("number_of_repeated_sampling",
                                                   N_samples_per_hydro_);
