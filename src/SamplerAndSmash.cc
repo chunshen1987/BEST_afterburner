@@ -196,31 +196,32 @@ SamplerAndSmash::SamplerAndSmash() {
             std::string value = iSS_config.read({key.c_str()});
             log.info("iSS: using option ", key, " = ", value);
         }
-        std::string input_file = iSS_config.read({"iSS_INPUTFILE"});
-        std::string work_path  = iSS_config.read({"WORKING_PATH"});
+        std::string input_file = iSS_config.take({"iSS_INPUTFILE"});
+        std::string work_path = iSS_config.take({"WORKING_PATH"});
         // set default parameters
-        iSpectraSampler_ptr_ = std::unique_ptr<iSS> (new iSS(work_path));
+        iSpectraSampler_ptr_ = smash::make_unique<iSS>(work_path);
         iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
 
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
-                        "number_of_repeated_sampling", N_samples_per_hydro_);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("number_of_repeated_sampling",
+                                                  N_samples_per_hydro_);
         int64_t random_seed = config.read({"General", "Randomseed"});
         iSpectraSampler_ptr_->set_random_seed(random_seed);
-        int hydro_mode = iSS_config.read({"HYDRO_MODE"});
+        int hydro_mode = iSS_config.take({"HYDRO_MODE"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal(
-                                            "output_samples_into_files", 0);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("output_samples_into_files", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_OSCAR_format", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_gzip_format", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("store_samples_in_memory", 1);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("perform_decays", 0);
 
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_shear", 1);
-        int bulk_deltaf = iSS_config.read({"INCLUDE_DELTAF_BULK"});
+        int shear_deltaf = iSS_config.take({"INCLUDE_DELTAF_SHEAR"});
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_shear",
+                                                  shear_deltaf);
+        int bulk_deltaf = iSS_config.take({"INCLUDE_DELTAF_BULK"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_bulk",
                                                   bulk_deltaf);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("bulk_deltaf_kind", 1);
-        int diff_deltaf = iSS_config.read({"INCLUDE_DELTAF_DIFF"});
+        int diff_deltaf = iSS_config.take({"INCLUDE_DELTAF_DIFF"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_diffusion",
                                                   diff_deltaf);
         int restrict_df = iSS_config.take({"RESTRICT_DELTAF"});
@@ -238,6 +239,18 @@ SamplerAndSmash::SamplerAndSmash() {
         log.info("cmake .. -DiSS=ON");
         exit(1);
 #endif
+    }
+
+    // Get rid of configuration for unused samplers
+    for (const std::string s : {"Microcanonical", "MSU", "iSS"}) {
+        if (s != sampler_type_str) {
+            if (config.has_value({s.c_str()})) {
+                config.take({s.c_str()});
+            }
+            if (config.has_value({(s + "Sampler").c_str()})) {
+                config.take({(s + "Sampler").c_str()});
+            }
+        }
     }
 
     /**
