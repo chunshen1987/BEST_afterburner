@@ -209,6 +209,10 @@ SamplerAndSmash::SamplerAndSmash() {
         iSpectraSampler_ptr_->set_random_seed(random_seed);
         int hydro_mode = iSS_config.take({"HYDRO_MODE"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
+
+        // set the hadronic afterburner to be SMASH
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("afterburner_type", 2);
+
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("output_samples_into_files", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_OSCAR_format", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_gzip_format", 0);
