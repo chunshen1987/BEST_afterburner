@@ -4,10 +4,10 @@ SCRIPT=`realpath $0`
 SCRIPTPATH=`dirname $SCRIPT`
 
 python_scripts_folder=${SCRIPTPATH}/../external_codes/smash-analysis/test/energy_scan
-spectra_output_folder=smash_analyzed
+spectra_output_folder=smash_MSU_results
 mkdir -p ${spectra_output_folder}
 
-SMASH_results_folder=./smash_output
+SMASH_results_folder=./smash_output_MSU
 
 python ${python_scripts_folder}/mult_and_spectra.py \
        --output_files ${spectra_output_folder}/yspectra.txt \
