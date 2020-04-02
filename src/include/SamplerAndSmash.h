@@ -66,7 +66,7 @@ class AfterburnerModus : public smash::ListModus {
 
 class SamplerAndSmash {
    public:
-    SamplerAndSmash();
+    SamplerAndSmash(std::string config_filename);
     void Execute();
 
    private:

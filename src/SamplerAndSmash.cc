@@ -52,17 +52,16 @@ void ensure_path_is_valid(const bf::path &path) {
 
 }  // namespace
 
-SamplerAndSmash::SamplerAndSmash() {
+SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
     /**
      *   Set up configuration
      */
-    std::string smash_config_filename = "../config.yaml";
-    bf::path input_config_path(smash_config_filename);
+    bf::path input_config_path(config_filename);
     if (!bf::exists(input_config_path)) {
-        std::cout << "SMASH config file " << smash_config_filename << " not found.";
+        std::cout << "Config file " << config_filename << " not found.";
         std::exit(-1);
     } else {
-        std::cout << "Obtaining SMASH configuration from " << smash_config_filename
+        std::cout << "Obtaining configuration from " << config_filename
                   << std::endl;
     }
     smash::Configuration config = smash::Configuration(
@@ -384,6 +383,6 @@ void SamplerAndSmash::Execute() {
 }
 
 int main() {
-    SamplerAndSmash sampler_and_smash;
+    SamplerAndSmash sampler_and_smash("../config.yaml");
     sampler_and_smash.Execute();
 }
