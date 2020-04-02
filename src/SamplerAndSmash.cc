@@ -196,10 +196,11 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
             log.info("iSS: using option ", key, " = ", value);
         }
         std::string input_file = iSS_config.take({"iSS_INPUTFILE"});
+        std::string table_path = iSS_config.take({"iSS_TABLESPATH"});
         std::string work_path = iSS_config.take({"WORKING_PATH"});
         // set default parameters
-        iSpectraSampler_ptr_ = smash::make_unique<iSS>(work_path);
-        iSpectraSampler_ptr_->paraRdr_ptr->readFromFile(input_file);
+        iSpectraSampler_ptr_ =
+            smash::make_unique<iSS>(work_path, table_path, input_file);
 
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("number_of_repeated_sampling",
                                                   N_samples_per_hydro_);
@@ -207,6 +208,10 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
         iSpectraSampler_ptr_->set_random_seed(random_seed);
         int hydro_mode = iSS_config.take({"HYDRO_MODE"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
+
+        // set the hadronic afterburner to be SMASH
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("afterburner_type", 2);
+
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("output_samples_into_files", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_OSCAR_format", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("use_gzip_format", 0);
