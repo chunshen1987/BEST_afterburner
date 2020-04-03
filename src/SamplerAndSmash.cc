@@ -4,6 +4,7 @@
 #include "smash/inputfunctions.h"
 #include "smash/particles.h"
 #include "smash/setup_particles_decaymodes.h"
+#include "smash/stringfunctions.h"
 
 #include "microcanonical_sampler/sampler_particletype_list.h"
 
@@ -50,6 +51,86 @@ void ensure_path_is_valid(const bf::path &path) {
     }
 }
 
+bool avoid_in_sampler_table(const smash::ParticleTypePtr ptype) {
+    const smash::PdgCode pdg = ptype->pdgcode();
+    std::array<int, 3> q = pdg.quark_content();
+    bool has_heavy_quark =
+        std::abs(q[0]) > 3 || std::abs(q[1]) > 3 || std::abs(q[2]) > 3;
+    return pdg.is_lepton() ||
+           (pdg.is_nucleus() && !ptype->is_stable()) ||  // Unstable nuclei, like t'
+           (pdg.is_hadron() && has_heavy_quark);         // heavy flavor hadrons
+}
+
+bool avoid_sampling(const smash::ParticleTypePtr ptype) {
+    // Photons should be in the table for decaymodes consistency,
+    // but they should not be sampled
+    return !ptype->is_hadron() || avoid_in_sampler_table(ptype);
+}
+
+void smash_particles_to_iSS_format(
+    // Todo(oliiny): currently MSU sampler is using iSS format with one minor difference.
+    //  Make sure MSU converges to the common format version.
+    const std::string &sampler_particles_filename,
+    const std::string &sampler_particles_selector_filename) {
+    FILE *sampler_particles_file;
+    FILE *sampler_particles_selector_file;
+    sampler_particles_file = fopen(sampler_particles_filename.c_str(), "w");
+    sampler_particles_selector_file =
+        fopen(sampler_particles_selector_filename.c_str(), "w");
+
+    smash::ParticleTypePtrList list;
+    list.clear();
+    for (const auto &ptype : smash::ParticleType::list_all()) {
+        if (!ptype.pdgcode().is_lepton() && ptype.pdgcode().charmness() == 0 &&
+            ptype.pdgcode().bottomness() == 0) {
+            list.push_back(&ptype);
+        }
+    }
+    std::sort(list.begin(), list.end(),
+              [](smash::ParticleTypePtr a, smash::ParticleTypePtr b) {
+                  return a->mass() < b->mass();
+              });
+
+    for (const smash::ParticleTypePtr ptype : list) {
+        if (!avoid_in_sampler_table(ptype)) {
+            fprintf(sampler_particles_selector_file, "%13i\n",
+                    ptype->pdgcode().get_decimal());
+        }
+        if (ptype->baryon_number() < 0 || avoid_in_sampler_table(ptype)) {
+            continue;
+        }
+        const auto &decay_modes = ptype->decay_modes();
+        const auto &modelist = decay_modes.decay_mode_list();
+        int ndecays = ptype->is_stable() ? 1 : modelist.size();
+        fprintf(sampler_particles_file,
+                "%13i %s %10.5f %10.5f %5i %5i %5i %5i %5i %5i %5i %5i\n",
+                ptype->pdgcode().get_decimal(),
+                smash::utf8::fill_left(ptype->name(), 12, ' ').c_str(),
+                ptype->mass(), ptype->width_at_pole(),
+                ptype->pdgcode().spin_degeneracy(), ptype->baryon_number(),
+                ptype->strangeness(), ptype->pdgcode().charmness(),
+                ptype->pdgcode().bottomness(), ptype->isospin() + 1, ptype->charge(),
+                ndecays);
+        if (!ptype->is_stable()) {
+            for (const auto &decay : modelist) {
+                auto ptypes = decay->particle_types();
+                fprintf(sampler_particles_file,
+                        "%13i %13i %20.5f %13i %13i %13i %13i %13i\n",
+                        ptype->pdgcode().get_decimal(), 2, decay->weight(),
+                        ptypes[0]->pdgcode().get_decimal(),
+                        ptypes[1]->pdgcode().get_decimal(), 0, 0, 0);
+            }
+        } else {
+            fprintf(sampler_particles_file,
+                    "%13i %13i %20.5f %13i %13i %13i %13i %13i\n",
+                    ptype->pdgcode().get_decimal(), 1, 1.0,
+                    ptype->pdgcode().get_decimal(), 0, 0, 0, 0);
+        }
+    }
+    fclose(sampler_particles_file);
+    fclose(sampler_particles_selector_file);
+}
+
 }  // namespace
 
 SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
@@ -61,8 +142,7 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
         std::cout << "Config file " << config_filename << " not found.";
         std::exit(-1);
     } else {
-        std::cout << "Obtaining configuration from " << config_filename
-                  << std::endl;
+        std::cout << "Obtaining configuration from " << config_filename << std::endl;
     }
     smash::Configuration config = smash::Configuration(
         input_config_path.parent_path(), input_config_path.filename());
@@ -76,12 +156,20 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
     if (seed < 0) {
         config["General"]["Randomseed"] = smash::random::generate_63bit_seed();
     }
-    /**
-     *   Initialize sampler
-     */
-    std::string sampler_type_str = config.take({"General", "SamplerType"});
-    N_samples_per_hydro_ = config.read({"General", "Nevents"});
 
+    // Prepare output directory
+    std::string output_dir =
+        config.take({"Output_Directory"}, std::string("smash_output"));
+    bf::path output_path = default_output_path(output_dir);
+    ensure_path_is_valid(output_path);
+    // Keep a copy of the used configuration in the output directory
+    std::ofstream config_copy;
+    config_copy.open((output_path / "config.yaml").c_str());
+    config_copy << config.to_string();
+    config_copy.close();
+
+    // Initialize sampler type and its general parameters
+    std::string sampler_type_str = config.take({"Sampler", "Type"});
     if (sampler_type_str == "Microcanonical") {
         sampler_type_ = SamplerType::Microcanonical;
     } else if (sampler_type_str == "MSU") {
@@ -92,35 +180,86 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
         log.error("Unknown sampler type: ", sampler_type_str);
         throw std::runtime_error("Unknown sampler type.");
     }
+
+    N_samples_per_hydro_ = config.read({"General", "Nevents"});
+    const bool shear_deltaf = config.take({"Sampler", "ViscousCorections", "Shear"});
+    const bool bulk_deltaf = config.take({"Sampler", "ViscousCorections", "Bulk"});
+    const bool diff_deltaf =
+        config.take({"Sampler", "ViscousCorections", "Diffusion"});
+    const bool quantum_stat = config.take({"Sampler", "QuantumCorrections"});
+    const bool spectral_functions = config.take({"Sampler", "SpectralFunctions"});
+
+    /** Initialize SMASH particle types.
+     * A subset of these particles will be used for sampling.
+     * This is necessary for consistency: SMASH should be able to handle
+     * the particles sampler provides. It is also good for consistent comparison
+     * between different samplers: they are given the same particle table.
+     */
     std::string smash_particlelist_filename = config.take({"Particles"});
     std::string smash_decaymodes_filename = config.take({"DecayModes"});
+    log.info("Initializing particles table from ", smash_particlelist_filename,
+             " and ", smash_decaymodes_filename);
+    auto particles_and_decays = smash::load_particles_and_decaymodes(
+        smash_particlelist_filename.c_str(), smash_decaymodes_filename.c_str());
+    smash::ParticleType::create_type_list(particles_and_decays.first);
+    smash::DecayModes::load_decaymodes(particles_and_decays.second);
+    smash::ParticleType::check_consistency();
+
+    // Temporary file for particle table in iSS format. It is filled automatically
+    // below and gaurantees consistency between different samplers, because
+    // ALL samplers are going to be initialized from it.
+    const std::string sampler_particles_filename(
+        (output_path / "pdg-SMASH.dat").c_str());
+    // Additional temporary file, specific for iSS sampler.
+    // For our purposes this file should always contain all the particles
+    // from sampler_particles.
+    const std::string sampler_particles_selector_filename(
+        (output_path / "chosen_particles_SMASH.dat").c_str());
+
+    // Convert SMASH particle table to iSS format and cut off particles
+    // that definitely should not be sampled (such as photons, leptons,
+    // open charm and beauty hadrons, etc).
+    smash_particles_to_iSS_format(sampler_particles_filename,
+                                  sampler_particles_selector_filename);
+
+    const std::string hypersurface_input_file = config.take({"HyperSurface"});
 
     if (sampler_type_ == SamplerType::Microcanonical) {
         log.info("Initializing microcanonical sampler");
-        sampler::ParticleListFormat plist_format =
-            sampler::ParticleListFormat::SMASH;
-        sampler::read_particle_list(smash_particlelist_filename, plist_format);
+        sampler::ParticleListFormat plist_format = sampler::ParticleListFormat::iSS;
+        sampler::read_particle_list(sampler_particles_filename, plist_format);
 
-        smash::Configuration subconf = config["MicrocanonicalSampler"];
         // Maximal hadron mass to be sampled
-        const double max_mass = subconf.take({"MaxMass"}, 2.5);
-        const double E_patch = subconf.take({"PatchEnergy"}, 10.0);
-        const size_t N_warmup = subconf.take({"WarmupSteps"}, 1E6);
-        N_decorrelate_ = subconf.take({"DecorrelationSteps"}, 2E2);
+        const double E_patch =
+            config.take({"Sampler", "Microcanonical", "PatchEnergy"}, 20.0);
+        const size_t N_warmup = 1E6;
+        N_decorrelate_ = 2E2;
+
+        if (shear_deltaf || bulk_deltaf || diff_deltaf) {
+            log.error("Viscous corrections are not implemented",
+                      " in microcanonical sampler");
+        }
+        if (spectral_functions) {
+            log.error("Spectral functions are not implemented",
+                      "in microcanonical sampler. Pole masses will be used.");
+        }
 
         // Quantum statistics is not implemented properly in the microcanonical
         // sampler
-        constexpr bool quantum_statistics = false;
-
+        if (quantum_stat) {
+            log.error("Quantum statistics is not implemented in the microcanonical",
+                      " sampler.");
+        }
         /**
          * A function, which defines, which species will be sampled. For
          * a given species, if it returns true, the species will be sampled.
          */
-        auto is_sampled_type = [&](ParticleTypePtr t) {
-            return t->is_hadron() && t->mass() < max_mass;
+        auto is_sampled_type = [](sampler::ParticleTypePtr t) {
+            const smash::PdgCode pdg = t->pdgcode();
+            smash::ParticleTypePtr ptype = &smash::ParticleType::find(pdg);
+            return !avoid_sampling(ptype);
         };
 
-        std::string hypersurface_input_file = subconf.take({"HyperSurface"});
         HyperSurfacePatch::InputFormat hypersurface_format =
             HyperSurfacePatch::InputFormat::MUSIC_ASCII_3plus1D;
 
@@ -128,11 +267,10 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
         std::array<double, 3> eta_for_2Dhydro = {-2.0, 2.0, 0.4};
 
         HyperSurfacePatch hyper(hypersurface_input_file, hypersurface_format,
-                                eta_for_2Dhydro, is_sampled_type,
-                                quantum_statistics);
+                                eta_for_2Dhydro, is_sampled_type, quantum_stat);
         log.info("Full hypersurface: ", hyper);
-        microcanonical_sampler_ = smash::make_unique<MicrocanonicalSampler>(
-            is_sampled_type, 0, quantum_statistics);
+        microcanonical_sampler_ =
+            smash::make_unique<MicrocanonicalSampler>(is_sampled_type, 0, false);
 
         microcanonical_sampler_patches_ =
             smash::make_unique<std::vector<HyperSurfacePatch>>(hyper.split(E_patch));
@@ -164,11 +302,34 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
 
     if (sampler_type_ == SamplerType::MSU) {
         log.info("Initializing MSU sampler");
-        smash::Configuration msu_sampler_config = config["MSUSampler"];
-        for (const std::string key : msu_sampler_config.list_upmost_nodes()) {
-            std::string value = msu_sampler_config.take({key.c_str()});
-            log.info("MSU sampler: using option ", key, " = ", value);
-            msu_sampler_parameters_.set(key, value);
+        std::map<std::string, std::string> msu_parameters = {
+            {"RESONANCES_INFO_FILE", sampler_particles_filename},
+            {"RESONANCES_DECAYS_FILE", sampler_particles_filename},
+            {"HYPER_INFO_FILE", hypersurface_input_file},
+            // Todo(oliiny): provide directory in a clean way
+            {"SAMPLER_SFDIRNAME",
+             "../external_codes/best_sampler/software/resinfo/spectralfunctions"},
+            // Todo(MSU): make sure MSU sampler complains if hypersurface T is out of
+            // this range
+            {"SAMPLER_TFMIN", "0.110"},
+            {"SAMPLER_TFMAX", "0.170"},
+            {"SAMPLER_NTF", "60"},
+            {"SAMPLER_SIGMAFMIN", "0.093"},
+            {"SAMPLER_SIGMAFMAX", "0.093"},
+            {"SAMPLER_NSIGMAF", "1"},
+            {"SAMPLER_SETMU0", "false"},
+            {"SAMPLER_BOSE_CORR", std::to_string(quantum_stat)},
+            {"SAMPLER_N_BOSE_CORR", "5"},
+            {"SAMPLER_USE_POLE_MASS", std::to_string(spectral_functions)}};
+        for (const auto &par : msu_parameters) {
+            msu_sampler_parameters_.set(par.first, par.second);
+        }
+
+        if (!shear_deltaf) {
+            log.error("MSU sampler always samples shear viscous corrections!");
+        }
+        if (bulk_deltaf || diff_deltaf) {
+            log.error("MSU sampler does not include bulk or diffusion corrections.");
         }
 
         log.info("MSU sampler: creating particle list");
@@ -190,24 +351,28 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
     if (sampler_type_ == SamplerType::iSS) {
 #ifdef iSSFlag
         log.info("Initializing the iSS sampler");
-        smash::Configuration iSS_config = config["iSS"];
-        for (const std::string key : iSS_config.list_upmost_nodes()) {
-            std::string value = iSS_config.read({key.c_str()});
-            log.info("iSS: using option ", key, " = ", value);
-        }
-        std::string input_file = iSS_config.take({"iSS_INPUTFILE"});
-        std::string table_path = iSS_config.take({"iSS_TABLESPATH"});
-        std::string work_path = iSS_config.take({"WORKING_PATH"});
-        // set default parameters
-        iSpectraSampler_ptr_ =
-            smash::make_unique<iSS>(work_path, table_path, input_file);
+
+        // Todo(oliiny): find a more robust way to provide path
+        bf::path iSS_dir("../external_codes/iSS");
+
+        // Assume that music_input file with hydro parameter, that iSS reads in
+        // is in the same directory with hypersurface
+        // Todo(oliiny): need a hook-up to particle table -- currently iSS assumes
+        // that various iSS tables and particle table are in one directory. This has
+        // to be decoupled, maybe via an option to provide particle table AND
+        // chosen_particles file.
+        iSpectraSampler_ptr_ = smash::make_unique<iSS>(
+            bf::path(hypersurface_input_file).parent_path().string(),
+            (iSS_dir / "iSS_tables").string(),
+            (iSS_dir / "iSS_parameters.dat").string());
 
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("number_of_repeated_sampling",
                                                   N_samples_per_hydro_);
         int64_t random_seed = config.read({"General", "Randomseed"});
         iSpectraSampler_ptr_->set_random_seed(random_seed);
-        int hydro_mode = iSS_config.take({"HYDRO_MODE"});
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", hydro_mode);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("hydro_mode", 2);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("quantum_statistics",
+                                                  quantum_stat);
 
         // set the hadronic afterburner to be SMASH
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("afterburner_type", 2);
@@ -218,18 +383,14 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("store_samples_in_memory", 1);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("perform_decays", 0);
 
-        int shear_deltaf = iSS_config.take({"INCLUDE_DELTAF_SHEAR"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_shear",
                                                   shear_deltaf);
-        int bulk_deltaf = iSS_config.take({"INCLUDE_DELTAF_BULK"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_bulk",
                                                   bulk_deltaf);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("bulk_deltaf_kind", 1);
-        int diff_deltaf = iSS_config.take({"INCLUDE_DELTAF_DIFF"});
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("include_deltaf_diffusion",
                                                   diff_deltaf);
-        int restrict_df = iSS_config.take({"RESTRICT_DELTAF"});
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("restrict_deltaf", restrict_df);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("restrict_deltaf", 0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("deltaf_max_ratio", 1.0);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("f0_is_not_small", 1);
 
@@ -237,6 +398,10 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("MC_sampling", 2);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal(
             "sample_upto_desired_particle_number", 0);
+        if (spectral_functions) {
+            log.error("iSS does not support spectral functions. ",
+                      "Pole masses will be used.");
+        }
         iSpectraSampler_ptr_->paraRdr_ptr->echo();
 #else
         log.info("Please compile the BEST afterburner with the iSS sampler");
@@ -248,11 +413,8 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
     // Get rid of configuration for unused samplers
     for (const std::string s : {"Microcanonical", "MSU", "iSS"}) {
         if (s != sampler_type_str) {
-            if (config.has_value({s.c_str()})) {
-                config.take({s.c_str()});
-            }
-            if (config.has_value({(s + "Sampler").c_str()})) {
-                config.take({(s + "Sampler").c_str()});
+            if (config.has_value({"Sampler", s.c_str()})) {
+                config.take({"Sampler", s.c_str()});
             }
         }
     }
@@ -261,20 +423,7 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
      *   Initialize SMASH Experiment
      */
 
-    // Initialize SMASH particle types, consistency with the sampler
-    // requires the particles file is the same for sampler and SMASH
-    auto particles_and_decays = smash::load_particles_and_decaymodes(
-        smash_particlelist_filename.c_str(), smash_decaymodes_filename.c_str());
-    smash::ParticleType::create_type_list(particles_and_decays.first);
-    smash::DecayModes::load_decaymodes(particles_and_decays.second);
-    smash::ParticleType::check_consistency();
-
     log.info("Seting up SMASH Experiment object");
-    std::string output_dir =
-        config.take({"Output_Directory"}, std::string("smash_output"));
-    bf::path output_path = default_output_path(output_dir);
-    ensure_path_is_valid(output_path);
-
     smash_experiment_ = (smash::make_unique<smash::Experiment<AfterburnerModus>>(
         config, output_path));
     smash_experiment_->modus()->set_sampler_type(sampler_type_);
