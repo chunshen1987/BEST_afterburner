@@ -92,7 +92,7 @@ void smash_particles_to_iSS_format(
               });
 
     for (const smash::ParticleTypePtr ptype : list) {
-        if (!avoid_in_sampler_table(ptype)) {
+        if (!avoid_sampling(ptype)) {
             fprintf(sampler_particles_selector_file, "%13i\n",
                     ptype->pdgcode().get_decimal());
         }
@@ -358,13 +358,10 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
 
         // Assume that music_input file with hydro parameter, that iSS reads in
         // is in the same directory with hypersurface
-        // Todo(oliiny): need a hook-up to particle table -- currently iSS assumes
-        // that various iSS tables and particle table are in one directory. This has
-        // to be decoupled, maybe via an option to provide particle table AND
-        // chosen_particles file.
         iSpectraSampler_ptr_ = smash::make_unique<iSS>(
             bf::path(hypersurface_input_file).parent_path().string(),
             (iSS_dir / "iSS_tables").string(),
+            output_path.string(),   // Particle tables were automatically created there
             (iSS_dir / "iSS_parameters.dat").string());
 
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("number_of_repeated_sampling",
