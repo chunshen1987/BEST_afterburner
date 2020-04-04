@@ -115,16 +115,17 @@ void smash_particles_to_iSS_format(
             for (const auto &decay : modelist) {
                 auto ptypes = decay->particle_types();
                 fprintf(sampler_particles_file,
-                        "%13i %13i %20.5f %13i %13i %13i %13i %13i\n",
+                        "%13i %13i %20.5f %13i %13i %13i %13i %13i %13i\n",
                         ptype->pdgcode().get_decimal(), 2, decay->weight(),
                         ptypes[0]->pdgcode().get_decimal(),
-                        ptypes[1]->pdgcode().get_decimal(), 0, 0, 0);
+                        ptypes[1]->pdgcode().get_decimal(), 0, 0, 0,
+                        decay->angular_momentum());
             }
         } else {
             fprintf(sampler_particles_file,
-                    "%13i %13i %20.5f %13i %13i %13i %13i %13i\n",
+                    "%13i %13i %20.5f %13i %13i %13i %13i %13i %13i\n",
                     ptype->pdgcode().get_decimal(), 1, 1.0,
-                    ptype->pdgcode().get_decimal(), 0, 0, 0, 0);
+                    ptype->pdgcode().get_decimal(), 0, 0, 0, 0, 0);
         }
     }
     fclose(sampler_particles_file);
