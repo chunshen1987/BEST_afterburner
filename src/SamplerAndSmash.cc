@@ -321,14 +321,12 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
             {"SAMPLER_SETMU0", "false"},
             {"SAMPLER_BOSE_CORR", std::to_string(quantum_stat)},
             {"SAMPLER_N_BOSE_CORR", "5"},
-            {"SAMPLER_USE_POLE_MASS", std::to_string(spectral_functions)}};
+            {"SAMPLER_USE_POLE_MASS", std::to_string(spectral_functions)},
+            {"VISCOUSCORRECTION", std::to_string(shear_deltaf)}};
         for (const auto &par : msu_parameters) {
             msu_sampler_parameters_.set(par.first, par.second);
         }
 
-        if (!shear_deltaf) {
-            log.error("MSU sampler always samples shear viscous corrections!");
-        }
         if (bulk_deltaf || diff_deltaf) {
             log.error("MSU sampler does not include bulk or diffusion corrections.");
         }
