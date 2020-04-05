@@ -1,3 +1,5 @@
+#include <getopt.h>
+
 #include "SamplerAndSmash.h"
 
 #include "smash/decaymodes.h"
@@ -132,19 +134,24 @@ void smash_particles_to_iSS_format(
 
 }  // namespace
 
-SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
+SamplerAndSmash::SamplerAndSmash(std::string config_filename,
+                                 const std::vector<std::string> &extra_config) {
     /**
      *   Set up configuration
      */
     bf::path input_config_path(config_filename);
     if (!bf::exists(input_config_path)) {
-        std::cout << "Config file " << config_filename << " not found.";
+        std::cout << "Config file " << config_filename << " not found." << std::endl;
         std::exit(-1);
     } else {
         std::cout << "Obtaining configuration from " << config_filename << std::endl;
     }
     smash::Configuration config = smash::Configuration(
         input_config_path.parent_path(), input_config_path.filename());
+    for (const auto &c : extra_config) {
+        config.merge_yaml(c);
+    }
+
     // Set up logging
     smash::set_default_loglevel(config.take({"Logging", "default"}, einhard::ALL));
     smash::create_all_loggers(config["Logging"]);
@@ -533,7 +540,52 @@ void SamplerAndSmash::Execute() {
     }
 }
 
-int main() {
-    SamplerAndSmash sampler_and_smash("../config.yaml");
+namespace {
+void usage(const int rc, const std::string &progname) {
+    std::printf("\nUsage: %s [option]\n\n", progname.c_str());
+    std::printf(
+        "  -h, --help              usage information\n"
+        "  -c, --configfile <file> path to configuration file\n"
+        "                          (default: ../config.yaml)\n"
+        "  -o, --option <YAML>     override option from config file\n"
+        "                          Can be used multiple times\n"
+        "                          For example:\n"
+        "                          ./%s\n"
+        "                             -o \"Output: {Output_Interval: 10.0}\"\n"
+        "                             -o \"Sampler: {Type: iSS}\"\n"
+        "                             -o \"Output_Directory: "
+        "iSS_plus_SMASH_results\"\n\n",
+        progname.c_str());
+    std::exit(rc);
+}
+}  // anonymous namespace
+
+int main(int argc, char *argv[]) {
+    constexpr option longopts[] = {{"configfile", required_argument, 0, 'c'},
+                                   {"option", required_argument, 0, 'o'},
+                                   {"help", no_argument, 0, 'h'},
+                                   {nullptr, 0, 0, 0}};
+
+    int opt;
+    const std::string progname = bf::path(argv[0]).filename().native();
+    std::string config_file_path = "../config.yaml";
+    std::vector<std::string> extra_config;
+    while ((opt = getopt_long(argc, argv, "c:o:h", longopts, nullptr)) != -1) {
+        switch (opt) {
+            case 'o':
+                extra_config.emplace_back(optarg);
+                break;
+            case 'c':
+                config_file_path = optarg;
+                break;
+            case 'h':
+                usage(EXIT_SUCCESS, progname);
+                break;
+            default:
+                usage(EXIT_FAILURE, progname);
+        }
+    }
+
+    SamplerAndSmash sampler_and_smash(config_file_path, extra_config);
     sampler_and_smash.Execute();
 }
