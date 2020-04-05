@@ -15,21 +15,22 @@ Output:
         Format:     ["Oscar2013", "Binary"]
         Extended:   True
 
-# Both SMASH samplers are set up from these
+# Both SMASH and samplers are set up from these
 Particles:   "../external_codes/smash/input/particles.txt"
 DecayModes:  "../external_codes/smash/input/decaymodes.txt"
 
+# The same folder must contain music_input file for iSS sampler
 HyperSurface:   "results/surface.dat"
 
 Sampler:
-    Type: iSS   # options so far: Microcanonical, MSU, iSS
+    Type: MSU   # options so far: Microcanonical, MSU, iSS
     ViscousCorections:
-        Shear:     True
-        Bulk:      True
-        Diffusion: True
-    QuantumCorrections:    True
-    SpectralFunctions:     True
+        Shear:     False
+        Bulk:      False
+        Diffusion: False
+    QuantumCorrections:    False
+    SpectralFunctions:     False
 
     # Additional sampler-specific options
     Microcanonical: 
-        PatchEnergy:   20.0  # GeV
+        PatchEnergy:   50.0  # GeV
