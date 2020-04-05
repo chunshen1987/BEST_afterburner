@@ -18,3 +18,4 @@ build
 external_codes/best_sampler/*
 external_codes/iSS/*
 external_codes/microcanonical_cooper_frye/*
+external_code/smash_analysis/*
