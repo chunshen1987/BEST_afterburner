@@ -215,8 +215,8 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
     const std::string sampler_particles_selector_filename(
         (output_path / "chosen_particles_SMASH.dat").c_str());
 
-    std::string external_codes_dir((bf::path(__FILE__).parent_path() /
-                                   "/../external_codes").string());
+    std::string external_codes_dir(
+        (bf::path(__FILE__).parent_path() / "/../external_codes").string());
     log.info("External codes directory: ", external_codes_dir);
 
     // Convert SMASH particle table to iSS format and cut off particles
@@ -310,7 +310,8 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
             {"RESONANCES_DECAYS_FILE", sampler_particles_filename},
             {"HYPER_INFO_FILE", hypersurface_input_file},
             {"SAMPLER_SFDIRNAME",
-             external_codes_dir + "/best_sampler/software/resinfo/spectralfunctions"},
+             external_codes_dir +
+                 "/best_sampler/software/resinfo/spectralfunctions"},
             // Todo(MSU): make sure MSU sampler complains if hypersurface T is out of
             // this range
             {"SAMPLER_TFMIN", "0.110"},
@@ -358,7 +359,8 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
         iSpectraSampler_ptr_ = smash::make_unique<iSS>(
             bf::path(hypersurface_input_file).parent_path().string(),
             (iSS_dir / "iSS_tables").string(),
-            output_path.string(),   // Particle tables were automatically created there
+            output_path
+                .string(),  // Particle tables were automatically created there
             (iSS_dir / "iSS_parameters.dat").string());
 
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("number_of_repeated_sampling",
