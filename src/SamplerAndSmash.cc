@@ -68,8 +68,6 @@ bool avoid_sampling(const smash::ParticleTypePtr ptype) {
 }
 
 void smash_particles_to_iSS_format(
-    // Todo(oliiny): currently MSU sampler is using iSS format with one minor difference.
-    //  Make sure MSU converges to the common format version.
     const std::string &sampler_particles_filename,
     const std::string &sampler_particles_selector_filename) {
     FILE *sampler_particles_file;
@@ -217,6 +215,10 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
     const std::string sampler_particles_selector_filename(
         (output_path / "chosen_particles_SMASH.dat").c_str());
 
+    std::string external_codes_dir((bf::path(__FILE__).parent_path() /
+                                   "/../external_codes").string());
+    log.info("External codes directory: ", external_codes_dir);
+
     // Convert SMASH particle table to iSS format and cut off particles
     // that definitely should not be sampled (such as photons, leptons,
     // open charm and beauty hadrons, etc).
@@ -307,9 +309,8 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
             {"RESONANCES_INFO_FILE", sampler_particles_filename},
             {"RESONANCES_DECAYS_FILE", sampler_particles_filename},
             {"HYPER_INFO_FILE", hypersurface_input_file},
-            // Todo(oliiny): provide directory in a clean way
             {"SAMPLER_SFDIRNAME",
-             "../external_codes/best_sampler/software/resinfo/spectralfunctions"},
+             external_codes_dir + "/best_sampler/software/resinfo/spectralfunctions"},
             // Todo(MSU): make sure MSU sampler complains if hypersurface T is out of
             // this range
             {"SAMPLER_TFMIN", "0.110"},
@@ -350,9 +351,7 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename) {
     if (sampler_type_ == SamplerType::iSS) {
 #ifdef iSSFlag
         log.info("Initializing the iSS sampler");
-
-        // Todo(oliiny): find a more robust way to provide path
-        bf::path iSS_dir("../external_codes/iSS");
+        bf::path iSS_dir(external_codes_dir + "/iSS");
 
         // Assume that music_input file with hydro parameter, that iSS reads in
         // is in the same directory with hypersurface
