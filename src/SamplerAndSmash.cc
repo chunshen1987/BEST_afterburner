@@ -482,7 +482,7 @@ void AfterburnerModus::sampler_hadrons_to_smash_particles(
                       " GeV, E = ", ihadron.E, " GeV");
             this->try_create_particle(
                 smash_particles, smash::PdgCode::from_decimal(ihadron.pid),
-                ihadron.t, ihadron.x, ihadron.y, ihadron.x, ihadron.mass, ihadron.E,
+                ihadron.t, ihadron.x, ihadron.y, ihadron.z, ihadron.mass, ihadron.E,
                 ihadron.px, ihadron.py, ihadron.pz);
         }
 #endif
