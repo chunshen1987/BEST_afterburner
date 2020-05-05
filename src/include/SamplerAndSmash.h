@@ -15,6 +15,10 @@
 #include "iSS.h"
 #endif
 
+// Shortcuts for logging areas
+static constexpr int LMain = smash::LMain;
+static constexpr int LExperiment = smash::LExperiment;
+
 enum class SamplerType {
     Microcanonical,
     MSU,
@@ -31,8 +35,7 @@ class AfterburnerModus : public smash::ListModus {
    public:
     // Unlike for ListModus there is no need to get any data from the config
     AfterburnerModus(smash::Configuration, const smash::ExperimentParameters &) {
-        const auto &log = smash::logger<smash::LogArea::Main>();
-        log.debug("Constructing AfterburnerModus");
+        smash::logg[LMain].debug("Constructing AfterburnerModus");
     }
 
     void set_sampler_type(SamplerType sampler_type) { sampler_type_ = sampler_type; }
