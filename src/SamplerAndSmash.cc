@@ -6,6 +6,7 @@
 #include "smash/inputfunctions.h"
 #include "smash/particles.h"
 #include "smash/setup_particles_decaymodes.h"
+#include "smash/sha256.h"
 #include "smash/stringfunctions.h"
 
 #include "microcanonical_sampler/sampler_particletype_list.h"
@@ -210,6 +211,16 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename,
     smash::ParticleType::create_type_list(particles_and_decays.first);
     smash::DecayModes::load_decaymodes(particles_and_decays.second);
     smash::ParticleType::check_consistency();
+    // Tabulate SMASH integrals
+    boost::filesystem::path tabulations_path = "./tabulations";
+    boost::filesystem::create_directories(tabulations_path);
+    const std::string particle_string = particles_and_decays.first;
+    const std::string decay_string = particles_and_decays.second;
+    smash::sha256::Context hash_context;
+    hash_context.update(particle_string);
+    hash_context.update(decay_string);
+    const auto hash = hash_context.finalize();
+    smash::IsoParticleType::tabulate_integrals(hash, tabulations_path);
 
     // Temporary file for particle table in iSS format. It is filled automatically
     // below and gaurantees consistency between different samplers, because
