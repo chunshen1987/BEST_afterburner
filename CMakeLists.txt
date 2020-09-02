@@ -18,7 +18,7 @@ message(STATUS "CXX_FLAGS = " ${CMAKE_CXX_FLAGS})
 add_executable(sampler_and_smash src/SamplerAndSmash.cc)
 include_directories(src/include)
 
-message($ENV{SMASH_DIR})
+message("SMASH_DIR = $ENV{SMASH_DIR}")
 find_package(SMASH)
 if(${SMASH_FOUND})
     include_directories(SYSTEM ${SMASH_INCLUDE_DIR})
