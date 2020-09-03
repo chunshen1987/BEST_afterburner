@@ -15,7 +15,7 @@ make
 # 3) Compile SMASH
 (
 cd smash && mkdir build && cd build
-cmake .. -DPythia_CONFIG_EXECUTABLE=../../pythia8235/bin/pythia8-config
+cmake .. -DPythia_CONFIG_EXECUTABLE=../../pythia8235/bin/pythia8-config -DUSE_ROOT=OFF
 
 machine="$(uname -s)"
 case "${machine}" in
