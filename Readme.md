@@ -1,47 +1,47 @@
-# BEST Afterburner
+# Wrapper for samplers + SMASH
 
-This is a wrapper, that combines different particle samplers and a hadronic transport package [SMASH](https://smash-transport.github.io).
+The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io) hadronic transport in a consistent manner under one configuration.
 
+## Installing
 
-## Install
+1. Download the 3rd party software
+  ```
+  cd external_codes
+  ./get_best_sampler.sh
+  ./get_iSS.sh
+  ./get_microcanonical_sampler.sh
+  ./get_smash.sh
+  cd ..
+  ```
+  Do this one by one and make sure that it is actually downloaded and installed.
+  If compilation went wrong, take a look at the cmake messages.
+  Likely gsl, boost or Pythia is not found. Install these SMASH prequisites, see smash/Readme.md for details.
 
-* Get and compile the [SMASH transport package](https://smash-transport.github.io)
-```
-    cd external_codes
-    ./get_smash.sh
-```
+2. Compile the wrapper
 
-If compilation went wrong, take a look at the cmake messages. Likely gsl, boost or Pythia is not found. Install these SMASH prequisites, see smash/Readme.md for details.
+  mkdir build && cd build
+  cmake ..
+  make
 
-* Get and compile the BEST particle sampler
+  Troubleshooting: pay attention at cmake error messages.
 
-```
-    cd external_codes
-    ./get_best_sampler.sh
-```
+## Configuring and running
 
-* Get and compile the microcanonical particle sampler
+  If you just run ./sampler_and_smash you will get an error: "Config file ../config.yaml not found".
+  The wrapper need a configuration file, which by default is ../config.yaml.
 
-```
-    cd external_codes
-    ./get_microcanonical_sampler.sh
-```
+  The configuration for ALL codes (SMASH, and all samplers) should be in the config.yaml file.
+  An example of configuration file can be found at
+  analysis/config_samplers_comparison.yaml
 
+  Sampler can be run with the command-line options like
+  ```
+    ./sampler_and_smash -h                // This print help
+    ./sampler_and_smash -c myconfig.yaml  // This runs sampler with configuration file myconfig.yaml
+    
+  ```
 
-* Compile the wrapper for particle sampler and SMASH
+## Analysis of SMASH results
 
-```
-    mkdir build
-    cd build
-    cmake .. -DPythia_CONFIG_EXECUTABLE=${PYTHIA8DIR}/bin/pythia8-config
-    make
-```
-
-The commands above are compiled in a bash script `compile.sh`. One can run this script to build the wrapper package.
-
-If one wants to run the iSS code package to sample particles and feed into SMASH, one can run the provided bash script, `./compile_with_iSS.sh`.
-
-* Configuring and running
-
-The configuration for ALL codes (SMASH, and all samplers) is in the config.yaml file.
-For explanations of parameters see the help of specific codes.
+  A considerable amount of analysis tolls are already developed by the SMASH team.
+  For an example of analysis using these tools look ata analysis/get_spectra.sh
