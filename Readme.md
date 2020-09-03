@@ -6,7 +6,7 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 
 1. Download the 3rd party software
 
-  ```
+  ```bash
   cd external_codes
   ./get_best_sampler.sh
   ./get_iSS.sh
@@ -21,7 +21,7 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 
 2. Compile the wrapper
 
-  ```
+  ```bash
   mkdir build && cd build
   cmake ..
   make
@@ -48,5 +48,5 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 
 ## Analysis of SMASH results
 
-  A considerable amount of analysis tolls are already developed by the SMASH team.
+  A considerable amount of analysis tools is already developed by the SMASH team.
   For an example of analysis using these tools look ata analysis/get_spectra.sh
