@@ -5,6 +5,7 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 ## Installing
 
 1. Download the 3rd party software
+
   ```
   cd external_codes
   ./get_best_sampler.sh
@@ -13,15 +14,18 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
   ./get_smash.sh
   cd ..
   ```
+
   Do this one by one and make sure that it is actually downloaded and installed.
   If compilation went wrong, take a look at the cmake messages.
   Likely gsl, boost or Pythia is not found. Install these SMASH prequisites, see smash/Readme.md for details.
 
 2. Compile the wrapper
 
+  ```
   mkdir build && cd build
   cmake ..
   make
+  ```
 
   Troubleshooting: pay attention at cmake error messages.
 
@@ -35,6 +39,7 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
   analysis/config_samplers_comparison.yaml
 
   Sampler can be run with the command-line options like
+
   ```
     ./sampler_and_smash -h                // This print help
     ./sampler_and_smash -c myconfig.yaml  // This runs sampler with configuration file myconfig.yaml
