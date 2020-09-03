@@ -14,7 +14,8 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
   cd ..
   ```
   Do this one by one and make sure that it is actually downloaded and installed.
-  Pay attention at cmake error messages.
+  If compilation went wrong, take a look at the cmake messages.
+  Likely gsl, boost or Pythia is not found. Install these SMASH prequisites, see smash/Readme.md for details.
 
 2. Compile the wrapper
 
