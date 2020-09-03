@@ -6,7 +6,7 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 
 1. Download the 3rd party software
 
-```bash
+```
 cd external_codes
 ./get_best_sampler.sh
 ./get_iSS.sh
@@ -21,7 +21,7 @@ cd ..
 
 2. Compile the wrapper
 
-```bash
+```
 mkdir build && cd build
 cmake ..
 make
