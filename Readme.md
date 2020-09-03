@@ -6,14 +6,14 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 
 1. Download the 3rd party software
 
-  ```bash
-  cd external_codes
-  ./get_best_sampler.sh
-  ./get_iSS.sh
-  ./get_microcanonical_sampler.sh
-  ./get_smash.sh
-  cd ..
-  ```
+```bash
+cd external_codes
+./get_best_sampler.sh
+./get_iSS.sh
+./get_microcanonical_sampler.sh
+./get_smash.sh
+cd ..
+```
 
   Do this one by one and make sure that it is actually downloaded and installed.
   If compilation went wrong, take a look at the cmake messages.
@@ -21,11 +21,11 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 
 2. Compile the wrapper
 
-  ```bash
-  mkdir build && cd build
-  cmake ..
-  make
-  ```
+```bash
+mkdir build && cd build
+cmake ..
+make
+```
 
   Troubleshooting: pay attention at cmake error messages.
 
@@ -40,11 +40,10 @@ The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io
 
   Sampler can be run with the command-line options like
 
-  ```
-    ./sampler_and_smash -h                // This print help
-    ./sampler_and_smash -c myconfig.yaml  // This runs sampler with configuration file myconfig.yaml
-    
-  ```
+```
+./sampler_and_smash -h                // This print help
+./sampler_and_smash -c myconfig.yaml  // This runs sampler with configuration file myconfig.yaml
+```
 
 ## Analysis of SMASH results
 
