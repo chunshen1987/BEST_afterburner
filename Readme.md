@@ -29,7 +29,7 @@ cd ..
 
 ```
 mkdir build && cd build
-cmake ..
+cmake .. -DPythia_CONFIG_EXECUTABLE=../external_codes/pythia8235/bin/pythia8-config
 make
 ```
 
