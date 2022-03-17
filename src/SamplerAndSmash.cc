@@ -354,16 +354,17 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename,
                 "MSU sampler does not include bulk or diffusion corrections.");
         }
 
-        smash::logg[LMain].info("MSU sampler: creating particle list");
-        msu_sampler_particlelist_ =
-            (smash::make_unique<msu_sampler::CpartList>(&msu_sampler_parameters_));
         smash::logg[LMain].info("MSU sampler: creating mean field");
         msu_sampler_meanfield_ = (smash::make_unique<msu_sampler::CmeanField_Simple>(
             &msu_sampler_parameters_));
         smash::logg[LMain].info("MSU sampler: creating sampler object");
-
         msu_sampler_ = smash::make_unique<msu_sampler::CmasterSampler>(
             &msu_sampler_parameters_);
+        smash::logg[LMain].info("MSU sampler: creating particle list");
+        msu_sampler_particlelist_ =
+            smash::make_unique<msu_sampler::CpartList>(&msu_sampler_parameters_,
+                                                       msu_sampler_->reslist);
+
         msu_sampler_->meanfield = msu_sampler_meanfield_.get();
         msu_sampler_->partlist = msu_sampler_particlelist_.get();
         msu_sampler_->randy->reset(time(NULL));
@@ -542,10 +543,10 @@ void SamplerAndSmash::Execute() {
         }
 
         smash::logg[LExperiment].info("Event ", j);
-        smash_experiment_->initialize_new_event(j);
+        smash_experiment_->initialize_new_event();
         smash_experiment_->run_time_evolution();
         smash_experiment_->do_final_decays();
-        smash_experiment_->final_output(j);
+        smash_experiment_->final_output();
     }
 
     if (sampler_type_ == SamplerType::iSS) {
