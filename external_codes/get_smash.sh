@@ -10,7 +10,7 @@ git clone --depth=1 https://github.com/smash-transport/smash.git
     wget https://pythia.org/download/pythia83/pythia8307.tar.bz2
     tar xf pythia8307.tar.bz2 && rm pythia8307.tar.bz2
     cd pythia8307
-    ./configure --cxx-common='-std=c++11 -march=native -mfpmath=sse -O3 -fPIC'
+    ./configure --cxx-common='-std=c++11 -O3 -fPIC'
     make
 )
 
