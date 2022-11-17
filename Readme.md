@@ -14,7 +14,7 @@ git clone https://doliinychenko@bitbucket.org/bestcollaboration/best_afterburner
 
 ```
 cd external_codes
-./get_best_sampler.sh
+./get_msu_sampler.sh
 ./get_iSS.sh
 ./get_microcanonical_sampler.sh
 ./get_smash.sh
