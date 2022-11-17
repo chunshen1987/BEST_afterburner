@@ -11,7 +11,7 @@ endif()
 set(ENV{SMASH_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/external_codes/smash")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external_codes/smash/cmake")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -g -O3 -std=c++11 -mfpmath=sse")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O3 -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wmissing-declarations -Wpointer-arith -Wshadow -Wuninitialized -Winit-self -Wundef -Wcast-align -Wformat=2 -Wold-style-cast -Werror=switch")
 message(STATUS "CXX_FLAGS = " ${CMAKE_CXX_FLAGS})
 
@@ -30,7 +30,7 @@ option(iSS "Build tests for iSS" OFF)
 
 set(SAMPLER_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/best_sampler/software/include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_codes/msu_sampler/software/include)
 
 if (iSS)
     set(SAMPLER_INCLUDES
@@ -44,7 +44,7 @@ include_directories(${SAMPLER_INCLUDES})
 message("SAMPLER_INCLUDES:  ${SAMPLER_INCLUDES}")
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/microcanonical_cooper_frye")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/best_sampler")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external_codes/msu_sampler")
 
 target_link_libraries(sampler_and_smash microcanonical_sampling msu_sampler_shared)
 

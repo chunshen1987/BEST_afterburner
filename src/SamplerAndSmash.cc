@@ -331,7 +331,7 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename,
             {"HYPER_INFO_FILE", hypersurface_input_file},
             {"SAMPLER_SFDIRNAME",
              external_codes_dir +
-                 "/best_sampler/software/resinfo/spectralfunctions"},
+                 "/msu_sampler/software/resinfo/spectralfunctions"},
             // Todo(MSU): make sure MSU sampler complains if hypersurface T is out of
             // this range
             {"SAMPLER_TFMIN", "0.110"},
