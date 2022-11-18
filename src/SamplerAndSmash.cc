@@ -542,9 +542,10 @@ void SamplerAndSmash::Execute() {
 #endif
         }
 
+        double t_end = 1000.;  // fm/c
         smash::logg[LExperiment].info("Event ", j);
         smash_experiment_->initialize_new_event();
-        smash_experiment_->run_time_evolution();
+        smash_experiment_->run_time_evolution(t_end);
         smash_experiment_->do_final_decays();
         smash_experiment_->final_output();
     }
