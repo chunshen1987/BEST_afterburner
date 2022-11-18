@@ -18,4 +18,5 @@ build
 external_codes/msu_sampler
 external_codes/iSS
 external_codes/microcanonical_cooper_frye
-external_code/smash_analysis
+external_codes/smash-analysis
+external_codes/pythia8307
