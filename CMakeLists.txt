@@ -64,3 +64,8 @@ if (USE_ROOT)
         target_link_libraries(${exeName} ${ROOT_LIBRARIES})
     endif ()
 endif (USE_ROOT)
+
+install(TARGETS ${exe_Name}
+        RUNTIME DESTINATION ${CMAKE_HOME_DIRECTORY}
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib/static)
