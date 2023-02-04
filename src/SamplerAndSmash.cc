@@ -414,7 +414,7 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename,
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("f0_is_not_small", 1);
 
         iSpectraSampler_ptr_->paraRdr_ptr->setVal("calculate_vn", 0);
-        iSpectraSampler_ptr_->paraRdr_ptr->setVal("MC_sampling", 2);
+        iSpectraSampler_ptr_->paraRdr_ptr->setVal("MC_sampling", 4);
         iSpectraSampler_ptr_->paraRdr_ptr->setVal(
             "sample_upto_desired_particle_number", 0);
         if (spectral_functions) {
