@@ -2,12 +2,6 @@
 
 The wrapper allows to run samplers and [SMASH](https://smash-transport.github.io) hadronic transport in a consistent manner under one configuration.
 
-To download this repository run
-
-```
-git clone https://doliinychenko@bitbucket.org/bestcollaboration/best_afterburner.git
-```
-
 ## Installing
 
 1. Download the 3rd party software
