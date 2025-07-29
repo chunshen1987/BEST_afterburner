@@ -11,7 +11,7 @@ Output_Directory:  smash_output_MSU
 Output:
     Output_Interval: 10.0
     Particles:
-        Only_Final: True
+        Only_Final: Yes
         Format:     ["Oscar2013", "Binary"]
         Extended:   True
 
