@@ -311,6 +311,14 @@ SamplerAndSmash::SamplerAndSmash(std::string config_filename,
         }
 
         std::cout << "Warming up." << std::endl;
+        // avoid empty patches at the end of the list
+        size_t last_patch_i = number_of_patches - 1;
+        while (((*microcanonical_sampler_particles_)[last_patch_i]).size() == 0) {
+            std::cout << "Removing empty patch " << last_patch_i << std::endl;
+            microcanonical_sampler_patches_->pop_back();
+            number_of_patches -= 1;
+            last_patch_i = number_of_patches - 1;
+        }
         step_until_sufficient_decorrelation(
             *microcanonical_sampler_, *microcanonical_sampler_patches_,
             *microcanonical_sampler_particles_, N_warmup);
