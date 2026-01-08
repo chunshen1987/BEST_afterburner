@@ -44,7 +44,7 @@ RUN cd ${HOME} \
 && bash get_microcanonical_sampler.sh \
 && bash get_msu_sampler.sh \
 && CC=gcc-13 CXX=g++-13 bash get_smash.sh \
-&& cd ../ && bash compile_with_iSS.sh
+&& cd ../ && CC=gcc-13 CXX=g++-13 bash compile_with_iSS.sh
 
 ENV PYTHONIOENCODING utf-8
 
