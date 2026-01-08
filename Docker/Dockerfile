@@ -41,10 +41,10 @@ ENV HOME /opt/
 RUN cd ${HOME} \
 && git clone --depth=1 https://github.com/chunshen1987/BEST_afterburner -b SMASH-3.2.2 \
 && cd BEST_afterburner/external_codes \
-&& bash get_iSS.sh \
 && bash get_microcanonical_sampler.sh \
 && bash get_msu_sampler.sh \
-&& CXX=g++-13 bash get_smash.sh 
+&& CC=gcc-13 CXX=g++-13 bash get_smash.sh \
+&& cd ../ && bash compile_with_iSS.sh
 
 ENV PYTHONIOENCODING utf-8
 
