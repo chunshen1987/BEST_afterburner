@@ -38,8 +38,14 @@ RUN python3 -m pip install --upgrade pip && \
 ENV HOME /opt/
 
 # download and compile the iEBE-MUSIC framework
-RUN cd ${HOME} \
+RUN alias g++=g++-13 && alias gcc=gcc-13 \
+&& cd ${HOME} \
 && git clone --depth=1 https://github.com/chunshen1987/BEST_afterburner -b SMASH-3.2.2
+&& cd BEST_afterburner/external_codes \
+&& bash get_iSS.sh \
+&& bash get_microcanonical_sampler.sh \
+&& bash get_msu_sampler.sh \
+&& bash get_smash.sh 
 
 ENV PYTHONIOENCODING utf-8
 

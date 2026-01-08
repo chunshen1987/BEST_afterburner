@@ -15,8 +15,8 @@ git clone -b SMASH-3.3 --depth=1 https://github.com/smash-transport/smash.git
 
 # 2) Get the right version of Pythia right here (newer SMASH may need a different version)
 (
-    wget https://pythia.org/download/pythia83/pythia8316.tar.bz2
-    tar xf pythia8316.tar.bz2 && rm pythia8316.tar.bz2
+    wget https://pythia.org/download/pythia83/pythia8316.tgz
+    tar xf pythia8316.tgz && rm pythia8316.tgz
     cd pythia8316
     ./configure --cxx-common='-std=c++11 -O3 -fPIC'
 
