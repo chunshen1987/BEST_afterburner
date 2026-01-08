@@ -40,7 +40,7 @@ ENV HOME /opt/
 # download and compile the iEBE-MUSIC framework
 RUN alias g++=g++-13 && alias gcc=gcc-13 \
 && cd ${HOME} \
-&& git clone --depth=1 https://github.com/chunshen1987/BEST_afterburner -b SMASH-3.2.2
+&& git clone --depth=1 https://github.com/chunshen1987/BEST_afterburner -b SMASH-3.2.2 \
 && cd BEST_afterburner/external_codes \
 && bash get_iSS.sh \
 && bash get_microcanonical_sampler.sh \
