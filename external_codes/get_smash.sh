@@ -18,7 +18,7 @@ git clone -b SMASH-3.3 --depth=1 https://github.com/smash-transport/smash.git
     wget https://pythia.org/download/pythia83/pythia8316.tgz
     tar xf pythia8316.tgz && rm pythia8316.tgz
     cd pythia8316
-    ./configure --cxx-common='-std=c++11 -O3 -fPIC'
+    ./configure --cxx=${CXX} --cxx-common='-std=c++11 -O3 -fPIC'
 
     echo "Compiling PYTHIA using ${number_of_cores_to_compile} cores."
     make -j${number_of_cores_to_compile}
