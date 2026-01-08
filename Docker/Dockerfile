@@ -3,6 +3,10 @@ FROM ubuntu:22.04
 MAINTAINER Chun Shen <chunshen@wayne.edu>
 
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
+    apt-get update && apt-get install software-properties-common -y \
+    && add-apt-repository ppa:ubuntu-toolchain-r/test
+
+RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
     apt-get update && apt-get install -y --no-install-recommends \
         cmake \
         curl \
