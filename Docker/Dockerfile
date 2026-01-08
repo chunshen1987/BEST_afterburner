@@ -15,6 +15,7 @@ RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
         gfortran-13 \
         git \
         hdf5-tools \
+        libboost-filesystem-dev \
         libfftw3-dev \
         libgsl-dev \
         libhdf5-dev \
