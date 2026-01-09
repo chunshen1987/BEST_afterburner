@@ -27,7 +27,6 @@ git clone -b SMASH-3.2.2 --depth=1 https://github.com/smash-transport/smash.git
 # 3) Compile SMASH
 (
     cd smash
-    rm cmake/FindGSL.cmake
     mkdir -p build && cd build
     cmake .. -DPythia_CONFIG_EXECUTABLE=../../pythia8315/bin/pythia8-config -DUSE_ROOT=OFF
 
