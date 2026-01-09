@@ -11,13 +11,13 @@ esac
 number_of_cores_to_compile=$(( ${number_of_cores} > 4 ? 4 : ${number_of_cores} ))
 
 # 1) Download the SMASH code
-git clone -b SMASH-3.3 --depth=1 https://github.com/smash-transport/smash.git
+git clone -b SMASH-3.2.2 --depth=1 https://github.com/smash-transport/smash.git
 
 # 2) Get the right version of Pythia right here (newer SMASH may need a different version)
 (
-    wget https://pythia.org/download/pythia83/pythia8316.tgz
-    tar xf pythia8316.tgz && rm pythia8316.tgz
-    cd pythia8316
+    wget https://pythia.org/download/pythia83/pythia8315.tgz
+    tar xf pythia8315.tgz && rm pythia8315.tgz
+    cd pythia8315
     ./configure --cxx=${CXX} --cxx-common='-std=c++11 -O3 -fPIC'
 
     echo "Compiling PYTHIA using ${number_of_cores_to_compile} cores."
@@ -29,7 +29,7 @@ git clone -b SMASH-3.3 --depth=1 https://github.com/smash-transport/smash.git
     cd smash
     rm cmake/FindGSL.cmake
     mkdir -p build && cd build
-    cmake .. -DPythia_CONFIG_EXECUTABLE=../../pythia8316/bin/pythia8-config -DUSE_ROOT=OFF
+    cmake .. -DPythia_CONFIG_EXECUTABLE=../../pythia8315/bin/pythia8-config -DUSE_ROOT=OFF
 
     echo "Compiling SMASH using ${number_of_cores_to_compile} cores."
     make -j${number_of_cores} smash smash_shared
