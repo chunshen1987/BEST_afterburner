@@ -17,6 +17,6 @@ mkdir -p build
 (
     cd build
     rm -fr *
-    cmake .. -DPythia_CONFIG_EXECUTABLE=../external_codes/pythia8316/bin/pythia8-config -DiSS=ON
+    cmake .. -DPythia_CONFIG_EXECUTABLE=../external_codes/pythia8315/bin/pythia8-config -DiSS=ON
     make -j${number_of_cores}
 )
